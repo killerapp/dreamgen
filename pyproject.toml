@@ -1,0 +1,52 @@
+[project]
+name = "continuous-image-gen"
+version = "0.1.0"
+description = "Continuous image generation system using Ollama for prompts and Flux for image generation"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "torch>=2.0.0",
+    "transformers>=4.30.0",
+    "diffusers>=0.25.0",
+    "Pillow>=10.0.0",
+    "typer[all]>=0.9.0",
+    "ollama>=0.4.7",
+    "python-dotenv>=1.0.0",
+    "accelerate>=1.3.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "black>=23.0.0",
+    "isort>=5.12.0",
+    "pylint>=2.17.0",
+    "pytest>=7.4.0",
+    "pytest-asyncio>=0.21.0"
+]
+
+[project.scripts]
+imagegen = "src.main:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src"]
+
+[tool.black]
+line-length = 100
+target-version = ["py311"]
+
+[tool.isort]
+profile = "black"
+line_length = 100
+multi_line_output = 3
+
+[tool.pylint.messages_control]
+disable = ["C0111", "C0103"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+python_files = ["test_*.py"]
