@@ -27,9 +27,13 @@ class PromptGenerator:
                 "Respond with just the prompt text, no additional commentary."
             ])
             
+            # Get temperature from environment with default
+            temperature = float(os.getenv('OLLAMA_TEMPERATURE', 0.6))
+            
             response = ollama.chat(
                 model=self.model_name,
-                messages=[{"role": "user", "content": context}]
+                messages=[{"role": "user", "content": context}],
+                options={"temperature": temperature}
             )
             
             return response.message.content.strip()

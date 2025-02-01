@@ -6,12 +6,15 @@ from typing import Optional
 import os
 import torch
 from diffusers import DiffusionPipeline
+from transformers import CLIPTokenizer
 from PIL import Image
 
 class ImageGenerator:
+    MAX_PROMPT_LENGTH = 77  # CLIP's max token length
     def __init__(self, model_name: str = None, cpu_only: bool = False):
         self.model_name = model_name or os.getenv('FLUX_MODEL', 'black-forest-labs/FLUX.1-dev')
         self.pipe = None
+        self.tokenizer = CLIPTokenizer.from_pretrained("openai/clip-vit-base-patch32")
         
         if not cpu_only and not torch.cuda.is_available():
             raise RuntimeError(
@@ -89,13 +92,27 @@ class ImageGenerator:
                 torch.cuda.empty_cache()
                 print(f"GPU Memory before generation: {torch.cuda.memory_allocated() / 1024**3:.2f} GB")
             
+            # Get generation parameters from environment with defaults
+            height = int(os.getenv('IMAGE_HEIGHT', 512))
+            width = int(os.getenv('IMAGE_WIDTH', 512))
+            num_steps = int(os.getenv('NUM_INFERENCE_STEPS', 30))
+            guidance = float(os.getenv('GUIDANCE_SCALE', 7.5))
+
+            # Truncate prompt if needed
+            tokens = self.tokenizer(prompt, truncation=True, max_length=self.MAX_PROMPT_LENGTH, return_tensors="pt")
+            truncated_prompt = self.tokenizer.decode(tokens["input_ids"][0])
+            if truncated_prompt != prompt:
+                print(f"Warning: Prompt was truncated to fit within {self.MAX_PROMPT_LENGTH} tokens")
+                print("Original:", prompt)
+                print("Truncated:", truncated_prompt)
+
             with torch.inference_mode(), torch.amp.autocast("cuda", enabled=self.device=="cuda"):
                 image = self.pipe(
                     prompt,
-                    num_inference_steps=30,  # Reduced from 50
-                    guidance_scale=7.5,
-                    height=512,  # Explicitly set smaller dimensions
-                    width=512,
+                    num_inference_steps=num_steps,
+                    guidance_scale=guidance,
+                    height=height,
+                    width=width,
                 ).images[0]
             
             if self.device == "cuda":
