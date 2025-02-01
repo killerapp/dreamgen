@@ -1,7 +1,7 @@
 """
 Main entry point for the continuous image generation system.
 """
-from .utils.cli import app
+from src.utils.cli import app
 
 def main():
     app()

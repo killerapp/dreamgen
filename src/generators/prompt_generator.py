@@ -13,30 +13,57 @@ class PromptGenerator:
             "A cross-section view of a towering termite mound reimagined as a retrofuturistic apartment complex, with tiny robots instead of termites going about their daily routines. Each chamber shows a different aspect of their mechanical society, from power generation to data processing.",
             "An impossible MC Escher-style train station during rush hour, where Victorian-era commuters walk on stairs that loop impossibly in multiple directions. The architecture blends Art Nouveau with mathematical impossibilities, while steam from locomotives rises in golden fractals."
         ]
+        self.conversation_history = []
         
     async def generate_prompt(self) -> str:
-        """Generate a creative image prompt using Ollama."""
+        """Generate a 60 word image prompt using Ollama with conversation context."""
         try:
             import ollama
             
-            context = "\n".join([
+            # Build system context
+            system_context = "\n".join([
                 "You are a creative prompt generator for image generation.",
-                "Generate 1 creative and unique image generation prompt similar to these examples:",
-                *[f"Example {i+1}: {prompt}" for i, prompt in enumerate(self.example_prompts)],
-                "\nGenerate a single new prompt that is different from the examples but maintains the same level of creativity and detail.",
-                "Respond with just the prompt text, no additional commentary."
+                "Generate unique and imaginative prompts that would inspire beautiful AI-generated images.",
+                "Each prompt should be distinct from previous ones while maintaining high quality.",
+                "Prompts should be detailed and descriptive, painting a vivid picture."
             ])
             
-            # Get temperature from environment with default
-            temperature = float(os.getenv('OLLAMA_TEMPERATURE', 0.6))
+            # Initialize conversation if empty
+            if not self.conversation_history:
+                self.conversation_history = [{
+                    "role": "system",
+                    "content": system_context
+                }, {
+                    "role": "user",
+                    "content": "\n".join([
+                        "Here are some example prompts:",
+                        *[f"Example {i+1}: {prompt}" for i, prompt in enumerate(self.example_prompts)],
+                        "\nGenerate a new prompt that is different from these examples but equally creative."
+                    ])
+                }]
             
+            # Get temperature from environment with default
+            temperature = float(os.getenv('OLLAMA_TEMPERATURE', 0.7))
+            
+            # Generate prompt
             response = ollama.chat(
                 model=self.model_name,
-                messages=[{"role": "user", "content": context}],
+                messages=self.conversation_history,
                 options={"temperature": temperature}
             )
             
-            return response.message.content.strip()
+            # Add new prompt to conversation history
+            new_prompt = response.message.content.strip()
+            self.conversation_history.append({
+                "role": "assistant",
+                "content": new_prompt
+            })
+            self.conversation_history.append({
+                "role": "user",
+                "content": "Generate another unique prompt, different from previous ones."
+            })
+            
+            return new_prompt
             
         except ImportError:
             raise ImportError("Please install ollama-python: pip install ollama")
@@ -63,3 +90,7 @@ class PromptGenerator:
                 return edited.strip()
             else:
                 print("Invalid choice, please try again.")
+    
+    def cleanup(self):
+        """Clean up resources."""
+        self.conversation_history = []
