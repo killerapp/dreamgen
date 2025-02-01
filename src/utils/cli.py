@@ -15,13 +15,14 @@ app = typer.Typer()
 def generate(
     interactive: bool = typer.Option(False, "--interactive", "-i", help="Enable interactive mode with prompt feedback"),
     model: str = typer.Option("llama2", "--model", "-m", help="Ollama model to use for prompt generation"),
+    cpu_only: bool = typer.Option(False, "--cpu-only", help="Force CPU-only mode (not recommended)"),
 ):
     """Generate a single image using AI-generated prompts."""
     async def _generate():
         try:
             # Initialize components
             prompt_gen = PromptGenerator(model_name=model)
-            image_gen = ImageGenerator()
+            image_gen = ImageGenerator(cpu_only=cpu_only)
             storage = StorageManager()
 
             # Generate prompt (with or without feedback)
@@ -60,13 +61,14 @@ def generate(
 def loop(
     interval: Optional[int] = typer.Option(None, "--interval", "-n", help="Interval in seconds between generations (default: immediate)"),
     model: str = typer.Option("llama2", "--model", "-m", help="Ollama model to use for prompt generation"),
+    cpu_only: bool = typer.Option(False, "--cpu-only", help="Force CPU-only mode (not recommended)"),
 ):
     """Continuously generate images in a loop."""
     async def _loop():
         try:
             # Initialize components
             prompt_gen = PromptGenerator(model_name=model)
-            image_gen = ImageGenerator()
+            image_gen = ImageGenerator(cpu_only=cpu_only)
             storage = StorageManager()
 
             print(f"Starting continuous generation loop...")
