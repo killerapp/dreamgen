@@ -6,15 +6,12 @@ from typing import Optional
 import os
 import torch
 from diffusers import DiffusionPipeline
-from transformers import CLIPTokenizer
 from PIL import Image
 
 class ImageGenerator:
-    MAX_PROMPT_LENGTH = 77  # CLIP's max token length
     def __init__(self, model_name: str = None, cpu_only: bool = False):
         self.model_name = model_name or os.getenv('FLUX_MODEL', 'black-forest-labs/FLUX.1-dev')
         self.pipe = None
-        self.tokenizer = CLIPTokenizer.from_pretrained("openai/clip-vit-base-patch32")
         
         if not cpu_only and not torch.cuda.is_available():
             raise RuntimeError(
@@ -43,24 +40,24 @@ class ImageGenerator:
                     
                 print(f"Loading model on {self.device}...")
                 
-                # Load model with maximum memory optimizations
+                # Set memory management environment variables
+                os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "max_split_size_mb:512"
+                
+                # Load model with memory optimizations
                 self.pipe = DiffusionPipeline.from_pretrained(
                     self.model_name,
                     torch_dtype=torch.float16 if self.device == "cuda" else torch.float32,
                     low_cpu_mem_usage=True,
+                    device_map="balanced",  # Enable balanced device placement
                 )
                 
                 if self.device == "cuda":
-                    # Enable all memory optimizations
-                    self.pipe.enable_attention_slicing(slice_size="max")
-                    print("Enabled maximum attention slicing")
+                    # Enable memory optimizations
+                    self.pipe.enable_attention_slicing()
+                    print("Enabled attention slicing")
                     
-                    self.pipe.enable_vae_slicing()
-                    print("Enabled VAE slicing")
-                    
-                    # Use sequential CPU offload for more aggressive memory savings
-                    self.pipe.enable_sequential_cpu_offload()
-                    print("Enabled sequential CPU offloading")
+                    self.pipe.enable_vae_tiling()
+                    print("Enabled VAE tiling")
                     
                     # Enable xformers memory efficient attention if available
                     try:
@@ -98,17 +95,11 @@ class ImageGenerator:
             num_steps = int(os.getenv('NUM_INFERENCE_STEPS', 30))
             guidance = float(os.getenv('GUIDANCE_SCALE', 7.5))
 
-            # Truncate prompt if needed
-            tokens = self.tokenizer(prompt, truncation=True, max_length=self.MAX_PROMPT_LENGTH, return_tensors="pt")
-            truncated_prompt = self.tokenizer.decode(tokens["input_ids"][0])
-            if truncated_prompt != prompt:
-                print(f"Warning: Prompt was truncated to fit within {self.MAX_PROMPT_LENGTH} tokens")
-                print("Original:", prompt)
-                print("Truncated:", truncated_prompt)
-
             with torch.inference_mode(), torch.amp.autocast("cuda", enabled=self.device=="cuda"):
+                # Let pipeline handle both encoders internally
                 image = self.pipe(
-                    prompt,
+                    prompt=prompt,
+                    prompt_2=prompt,  # Pass same prompt to T5
                     num_inference_steps=num_steps,
                     guidance_scale=guidance,
                     height=height,

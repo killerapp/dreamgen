@@ -13,3 +13,6 @@ wheels/
 .env
 
 output
+
+# Test artifacts
+test_output.png

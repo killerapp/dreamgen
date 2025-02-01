@@ -7,69 +7,115 @@ A Python application that continuously generates creative images using AI. It us
 - AI-powered prompt generation using Ollama
 - Image generation using Flux 1.1 transformers model
 - Interactive mode for prompt feedback and editing
-- Automatic weekly directory organization
-- Continuous generation loop with optional intervals
+- Automatic weekly directory organization for outputs
+- Continuous generation loop with optional intervals and batch settings
 - Prompt history saved alongside generated images
 
 ## Prerequisites
 
 - Python 3.11 or higher
 - Ollama installed and running locally
-- CUDA-capable GPU recommended for faster image generation
-- uv package manager (`pip install uv`)
+- CUDA-capable GPU with at least 8GB VRAM recommended
+- uv package manager (install using `pip install uv`)
 
 ## Installation
 
 1. Clone the repository:
-```bash
-git clone [your-repo-url]
-cd continuous-image-gen
-```
+   ```powershell
+   git clone https://github.com/killerapp/continuous-image-gen
+   cd continuous-image-gen
+   ```
 
-2. Install dependencies using uv:
-```bash
-uv pip install -e .
-```
+2. Set up the project using uv:
+   ```powershell
+   # Initialize virtual environment and install dependencies
+   uv sync
+   
+   # For development with extra dependencies
+   uv sync --dev
+   ```
 
-For development, install with extra dependencies:
-```bash
-uv pip install -e ".[dev]"
-```
+Note: Always use `uv sync` when updating dependencies or switching branches to ensure your environment matches the project requirements.
 
 ## Usage
+
+The CLI is powered by Typer and provides several commands to control image generation. Note that all commands should be executed using `uv run`.
 
 ### Single Image Generation
 
 Generate a single image:
-```bash
-uv python -m src.main generate
+```powershell
+uv run -m src.main generate
 ```
 
 Generate with interactive prompt feedback:
-```bash
-uv python -m src.main generate --interactive
+```powershell
+uv run -m src.main generate --interactive
 ```
 
-Use a different Ollama model:
-```bash
-uv python -m src.main generate --model mistral
+Run continuous generation with interval and batch size:
+```powershell
+uv run -m src.main loop --interval 300 --batch-size 5
 ```
+
+Generate with interactive prompt feedback:
+```powershell
+uv run -m src.main generate --interactive
+```
+
+Use a different Ollama model (also controlled by the `OLLAMA_MODEL` environment variable):
+```powershell
+uv run -m src.main generate --model mistral
+```
+
+Additional options:
+- `--cpu-only`: Force CPU-only mode (not recommended for production).
 
 ### Continuous Generation
 
 Run continuous generation (immediate):
-```bash
-uv python -m src.main loop
+```powershell
+uv run -m src.main loop
 ```
 
-Run with interval:
-```bash
-uv python -m src.main loop --interval 300  # 5 minutes between generations
+Run with a specified interval (in seconds) between generations:
+```powershell
+uv run -m src.main loop --interval 300  # 5 minutes between generations
+```
+
+Other options available for the loop command:
+- `--batch-size`: Number of images to generate in one continuous run (default is 5).
+- `--model`: Specify the Ollama model to use.
+- `--cpu-only`: Force CPU-only mode.
+
+### Interactive Mode Details
+
+Interactive Mode enables you to provide feedback on the generated prompt before finalizing image creation. When using the `--interactive` flag:
+- The system will generate a prompt and then allow you to review and provide feedback.
+- This mode is ideal if you want to refine or adjust the prompt before image processing begins.
+- After confirmation, the image generation proceeds with your input incorporated.
+
+### Environment Variables
+
+You can customize the behavior using these environment variables:
+
+- `OLLAMA_MODEL`: Default Ollama model for prompt generation (default: phi4:latest)
+- `OLLAMA_TEMPERATURE`: Temperature for prompt generation (default: 0.7)
+- `FLUX_MODEL`: Model for image generation (default: black-forest-labs/FLUX.1-dev)
+- `IMAGE_HEIGHT`: Output image height in pixels (default: 512)
+- `IMAGE_WIDTH`: Output image width in pixels (default: 512)
+- `NUM_INFERENCE_STEPS`: Number of denoising steps (default: 30)
+- `GUIDANCE_SCALE`: Guidance scale for image generation (default: 7.5)
+
+For example, to set a custom model in PowerShell:
+```powershell
+$env:OLLAMA_MODEL = "mistral"
+uv run -m src.main generate
 ```
 
 ### Output
 
-Generated images and their prompts are organized in weekly directories:
+Generated images and their corresponding prompt files are organized in weekly directories:
 ```
 output/
 └── [year]/
@@ -78,24 +124,48 @@ output/
         └── image_[timestamp]_[prompt_hash].txt
 ```
 
+## Known Issues
+
+- CLIP Token Limit: The current implementation uses experimental embeddings to work around CLIP's 77 token limit. This may affect prompt processing for very long descriptions.
+
 ## Development
 
 Format code:
-```bash
-uv python -m black src/
-uv python -m isort src/
+```powershell
+uv run -m black src/
+uv run -m isort src/
 ```
 
 Run linting:
-```bash
-uv python -m pylint src/
+```powershell
+uv run -m pylint src/
 ```
 
 Run tests:
-```bash
-uv python -m pytest
+```powershell
+uv run -m pytest
 ```
 
 ## License
 
-[Your chosen license]
+MIT License
+
+Copyright (c) 2024 killerapp
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
