@@ -40,7 +40,7 @@ class ImageGenerator:
                     
                 print(f"Loading model on {self.device}...")
                 
-                # Load model with memory optimizations
+                # Load model with maximum memory optimizations
                 self.pipe = DiffusionPipeline.from_pretrained(
                     self.model_name,
                     torch_dtype=torch.float16 if self.device == "cuda" else torch.float32,
@@ -48,16 +48,24 @@ class ImageGenerator:
                 )
                 
                 if self.device == "cuda":
-                    # Enable memory optimizations before moving to GPU
-                    self.pipe.enable_attention_slicing(slice_size=1)
-                    print("Enabled attention slicing")
+                    # Enable all memory optimizations
+                    self.pipe.enable_attention_slicing(slice_size="max")
+                    print("Enabled maximum attention slicing")
                     
                     self.pipe.enable_vae_slicing()
                     print("Enabled VAE slicing")
                     
-                    # Move to device
-                    print("Moving pipeline to GPU...")
-                    self.pipe = self.pipe.to(self.device)
+                    # Use sequential CPU offload for more aggressive memory savings
+                    self.pipe.enable_sequential_cpu_offload()
+                    print("Enabled sequential CPU offloading")
+                    
+                    # Enable xformers memory efficient attention if available
+                    try:
+                        self.pipe.enable_xformers_memory_efficient_attention()
+                        print("Enabled xformers memory efficient attention")
+                    except Exception:
+                        print("Xformers optimization not available")
+                    
                     print("Pipeline successfully loaded on GPU with memory optimizations")
                     
                     # Monitor memory usage
@@ -81,11 +89,13 @@ class ImageGenerator:
                 torch.cuda.empty_cache()
                 print(f"GPU Memory before generation: {torch.cuda.memory_allocated() / 1024**3:.2f} GB")
             
-            with torch.inference_mode(), torch.cuda.amp.autocast(enabled=self.device=="cuda"):
+            with torch.inference_mode(), torch.amp.autocast("cuda", enabled=self.device=="cuda"):
                 image = self.pipe(
                     prompt,
-                    num_inference_steps=50,
+                    num_inference_steps=30,  # Reduced from 50
                     guidance_scale=7.5,
+                    height=512,  # Explicitly set smaller dimensions
+                    width=512,
                 ).images[0]
             
             if self.device == "cuda":
