@@ -17,8 +17,9 @@ def generate(
     interactive: bool = typer.Option(False, "--interactive", "-i", help="Enable interactive mode with prompt feedback"),
     model: str = typer.Option(os.getenv('OLLAMA_MODEL', 'phi4:latest'), "--model", "-m", help="Ollama model to use for prompt generation"),
     cpu_only: bool = typer.Option(False, "--cpu-only", help="Force CPU-only mode (not recommended)"),
+    prompt: Optional[str] = typer.Option(None, "--prompt", "-p", help="Provide a custom prompt for direct inference"),
 ) -> None:
-    """Generate a single image using AI-generated prompts."""
+    """Generate a single image using AI-generated prompts or a custom prompt."""
     async def _generate() -> None:
         try:
             # Initialize components
@@ -26,23 +27,31 @@ def generate(
             image_gen = ImageGenerator(cpu_only=cpu_only)
             storage = StorageManager()
 
-            # Generate prompt (with or without feedback)
-            if interactive:
-                prompt = await prompt_gen.get_prompt_with_feedback()
+            # Use provided prompt or generate one
+            if prompt:
+                generated_prompt = prompt
+                print("\nUsing provided prompt:")
+                print("-" * 80)
+                print(generated_prompt)
+                print("-" * 80)
             else:
-                prompt = await prompt_gen.generate_prompt()
-                print("\nGenerated prompt:")
-                print("-" * 80)
-                print(prompt)
-                print("-" * 80)
+                # Generate prompt (with or without feedback)
+                if interactive:
+                    generated_prompt = await prompt_gen.get_prompt_with_feedback()
+                else:
+                    generated_prompt = await prompt_gen.generate_prompt()
+                    print("\nGenerated prompt:")
+                    print("-" * 80)
+                    print(generated_prompt)
+                    print("-" * 80)
 
             # Get output path
-            output_path = storage.get_output_path(prompt)
+            output_path = storage.get_output_path(generated_prompt)
             
             print(f"\nGenerating image...")
             
             # Generate image
-            await image_gen.generate_image(prompt, output_path)
+            await image_gen.generate_image(generated_prompt, output_path)
             
             print(f"\nImage generated successfully!")
             print(f"Saved to: {output_path}")
