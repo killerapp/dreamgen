@@ -39,54 +39,52 @@ Note: Always use `uv sync` when updating dependencies or switching branches to e
 
 ## Usage
 
-The CLI is powered by Typer and provides several commands to control image generation. Note that all commands should be executed using `uv run`.
+The application provides an intuitive CLI powered by Typer. All commands are executed using `uv run imagegen`.
 
-### Single Image Generation
+### Quick Start
 
-Generate a single image:
 ```powershell
-uv run -m src.main generate
+# Generate a single image
+uv run imagegen generate
+
+# Generate with interactive prompt feedback
+uv run imagegen generate --interactive
+
+# Generate multiple images
+uv run imagegen loop --batch-size 10 --interval 300
+
+# Show help and available options
+uv run imagegen --help
 ```
 
-Generate with interactive prompt feedback:
-```powershell
-uv run -m src.main generate --interactive
-```
+### Available Commands
 
-Run continuous generation with interval and batch size:
-```powershell
-uv run -m src.main loop --interval 300 --batch-size 5
-```
+1. `generate` - Create a single image
+   ```powershell
+   uv run imagegen generate [OPTIONS]
+   
+   Options:
+   -i, --interactive     Enable interactive mode with prompt feedback
+   -m, --model TEXT     Ollama model to use (default: phi4:latest)
+   -p, --prompt TEXT    Provide a custom prompt
+   --cpu-only          Force CPU-only mode (not recommended)
+   ```
 
-Generate with interactive prompt feedback:
-```powershell
-uv run -m src.main generate --interactive
-```
+2. `loop` - Generate multiple images in a batch
+   ```powershell
+   uv run imagegen loop [OPTIONS]
+   
+   Options:
+   -b, --batch-size INT  Number of images to generate (1-100)
+   -n, --interval INT   Seconds between generations
+   -m, --model TEXT     Ollama model to use (default: phi4:latest)
+   --cpu-only          Force CPU-only mode (not recommended)
+   ```
 
-Use a different Ollama model (also controlled by the `OLLAMA_MODEL` environment variable):
-```powershell
-uv run -m src.main generate --model mistral
-```
-
-Additional options:
-- `--cpu-only`: Force CPU-only mode (not recommended for production).
-
-### Continuous Generation
-
-Run continuous generation (immediate):
-```powershell
-uv run -m src.main loop
-```
-
-Run with a specified interval (in seconds) between generations:
-```powershell
-uv run -m src.main loop --interval 300  # 5 minutes between generations
-```
-
-Other options available for the loop command:
-- `--batch-size`: Number of images to generate in one continuous run (default is 5).
-- `--model`: Specify the Ollama model to use.
-- `--cpu-only`: Force CPU-only mode.
+3. Version Information
+   ```powershell
+   uv run imagegen --version
+   ```
 
 ### Interactive Mode Details
 
@@ -110,7 +108,7 @@ You can customize the behavior using these environment variables:
 For example, to set a custom model in PowerShell:
 ```powershell
 $env:OLLAMA_MODEL = "mistral"
-uv run -m src.main generate
+uv run imagegen generate
 ```
 
 ### Output

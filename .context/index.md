@@ -46,11 +46,19 @@ This project uses `uv` for all Python operations. Dependencies are managed throu
    across different environments.
 
 3. Running the Application:
+   The CLI is implemented using Typer with rich progress indicators and proper error handling:
    ```bash
-   uv python -m src.main generate --interactive  # Interactive mode
-   uv python -m src.main generate               # Single generation
-   uv python -m src.main loop                   # Continuous generation
+   uv run imagegen [command] [options]  # Main entry point
    ```
+
+   Key CLI Features:
+   - Rich progress bars and spinners for visual feedback
+   - Proper error handling with nested try/except blocks
+   - Cleanup handlers to ensure resource release
+   - Version information via --version flag
+   - Command groups for better organization
+   - Input validation (e.g., batch size limits)
+   - Interactive progress updates during batch operations
 
 ### Project Structure
 
@@ -58,18 +66,63 @@ This project uses `uv` for all Python operations. Dependencies are managed throu
 continuous-image-gen/
 ├── src/
 │   ├── generators/
-│   │   ├── prompt_generator.py    # Ollama integration
-│   │   └── image_generator.py     # Flux 1.1 integration
+│   │   ├── prompt_generator.py    # Ollama integration for prompt generation
+│   │   └── image_generator.py     # Flux 1.1 integration for image creation
 │   ├── utils/
-│   │   ├── storage.py            # Directory management
-│   │   └── cli.py               # CLI interface
-│   └── main.py                  # Entry point
+│   │   ├── storage.py            # Weekly directory management
+│   │   └── cli.py               # Typer-based CLI with rich formatting
+│   └── main.py                  # Entry point with proper package imports
 ├── output/
 │   └── [year]/
-│       └── week_[XX]/           # Auto-created weekly dirs
+│       └── week_[XX]/           # Auto-created weekly directories
 └── prompts/
-    └── examples.py              # Example prompts
+    └── examples.py              # Example prompts for testing
+
+CLI Architecture:
+├── main.py                      # Exports app from cli.py
+└── utils/
+    └── cli.py                   # Core CLI implementation
+        ├── app                  # Typer application instance
+        ├── version_callback     # Version info handler
+        ├── generate            # Single image generation
+        └── loop                # Batch generation with progress
 ```
+
+### CLI Implementation Details
+
+The CLI is built using Typer and Rich libraries with several key design decisions:
+
+1. Command Structure:
+   - Root command: `imagegen`
+   - Subcommands: `generate`, `loop`
+   - Global options: `--version`
+
+2. Progress Handling:
+   ```python
+   with Progress(
+       SpinnerColumn(),
+       TextColumn("[progress.description]{task.description}"),
+       TimeElapsedColumn(),
+   ) as progress:
+       # Task tracking with visual feedback
+   ```
+
+3. Error Handling Strategy:
+   - Nested try/except blocks for granular error control
+   - Proper cleanup in finally blocks
+   - Rich formatting for error messages
+   - Graceful handling of KeyboardInterrupt
+
+4. Resource Management:
+   - Automatic cleanup of generators
+   - Progress bar task cleanup
+   - Proper async/await usage
+
+5. User Feedback:
+   - Rich panels for prompts and results
+   - Color-coded status messages
+   - Progress spinners for indeterminate tasks
+   - Batch progress tracking
 
 ### Testing Strategy
 
