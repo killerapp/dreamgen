@@ -1,0 +1,296 @@
+[
+  {
+    "month": 1,
+    "day": 1,
+    "name": "New Year's Day",
+    "type": "public_holiday"
+  },
+  {
+    "month": 1,
+    "day": 4,
+    "name": "World Braille Day",
+    "type": "observance"
+  },
+  {
+    "month": 1,
+    "day": 15,
+    "name": "Martin Luther King Jr. Day",
+    "type": "public_holiday"
+  },
+  {
+    "month": 1,
+    "day": 24,
+    "name": "International Day of Education",
+    "type": "observance"
+  },
+  {
+    "month": 1,
+    "day": 28,
+    "name": "Data Privacy Day",
+    "type": "observance"
+  },
+  {
+    "month": 2,
+    "day": 2,
+    "name": "Groundhog Day",
+    "type": "cultural"
+  },
+  {
+    "month": 2,
+    "day": 11,
+    "name": "International Day of Women in Science",
+    "type": "observance"
+  },
+  {
+    "month": 2,
+    "day": 14,
+    "name": "Valentine's Day",
+    "type": "cultural"
+  },
+  {
+    "month": 2,
+    "day": 20,
+    "name": "World Day of Social Justice",
+    "type": "observance"
+  },
+  {
+    "month": 3,
+    "day": 3,
+    "name": "World Wildlife Day",
+    "type": "observance"
+  },
+  {
+    "month": 3,
+    "day": 8,
+    "name": "International Women's Day",
+    "type": "observance"
+  },
+  {
+    "month": 3,
+    "day": 14,
+    "name": "Pi Day",
+    "type": "fun"
+  },
+  {
+    "month": 3,
+    "day": 17,
+    "name": "St. Patrick's Day",
+    "type": "cultural"
+  },
+  {
+    "month": 3,
+    "day": 20,
+    "name": "International Day of Happiness",
+    "type": "observance"
+  },
+  {
+    "month": 3,
+    "day": 22,
+    "name": "World Water Day",
+    "type": "observance"
+  },
+  {
+    "month": 4,
+    "day": 1,
+    "name": "April Fools' Day",
+    "type": "cultural"
+  },
+  {
+    "month": 4,
+    "day": 7,
+    "name": "World Health Day",
+    "type": "observance"
+  },
+  {
+    "month": 4,
+    "day": 22,
+    "name": "Earth Day",
+    "type": "observance"
+  },
+  {
+    "month": 4,
+    "day": 23,
+    "name": "World Book Day",
+    "type": "observance"
+  },
+  {
+    "month": 5,
+    "day": 1,
+    "name": "International Workers' Day",
+    "type": "public_holiday"
+  },
+  {
+    "month": 5,
+    "day": 4,
+    "name": "Star Wars Day",
+    "type": "fun"
+  },
+  {
+    "month": 5,
+    "day": 5,
+    "name": "Cinco de Mayo",
+    "type": "cultural"
+  },
+  {
+    "month": 5,
+    "day": 20,
+    "name": "World Bee Day",
+    "type": "observance"
+  },
+  {
+    "month": 6,
+    "day": 5,
+    "name": "World Environment Day",
+    "type": "observance"
+  },
+  {
+    "month": 6,
+    "day": 8,
+    "name": "World Oceans Day",
+    "type": "observance"
+  },
+  {
+    "month": 6,
+    "day": 21,
+    "name": "International Day of Yoga",
+    "type": "observance"
+  },
+  {
+    "month": 7,
+    "day": 4,
+    "name": "Independence Day",
+    "type": "public_holiday"
+  },
+  {
+    "month": 7,
+    "day": 7,
+    "name": "World Chocolate Day",
+    "type": "fun"
+  },
+  {
+    "month": 7,
+    "day": 17,
+    "name": "World Emoji Day",
+    "type": "fun"
+  },
+  {
+    "month": 7,
+    "day": 30,
+    "name": "International Day of Friendship",
+    "type": "observance"
+  },
+  {
+    "month": 8,
+    "day": 8,
+    "name": "International Cat Day",
+    "type": "fun"
+  },
+  {
+    "month": 8,
+    "day": 12,
+    "name": "International Youth Day",
+    "type": "observance"
+  },
+  {
+    "month": 8,
+    "day": 19,
+    "name": "World Photography Day",
+    "type": "observance"
+  },
+  {
+    "month": 9,
+    "day": 5,
+    "name": "International Day of Charity",
+    "type": "observance"
+  },
+  {
+    "month": 9,
+    "day": 19,
+    "name": "Talk Like a Pirate Day",
+    "type": "fun"
+  },
+  {
+    "month": 9,
+    "day": 21,
+    "name": "International Day of Peace",
+    "type": "observance"
+  },
+  {
+    "month": 10,
+    "day": 1,
+    "name": "International Coffee Day",
+    "type": "fun"
+  },
+  {
+    "month": 10,
+    "day": 4,
+    "name": "World Animal Day",
+    "type": "observance"
+  },
+  {
+    "month": 10,
+    "day": 16,
+    "name": "World Food Day",
+    "type": "observance"
+  },
+  {
+    "month": 10,
+    "day": 31,
+    "name": "Halloween",
+    "type": "cultural"
+  },
+  {
+    "month": 11,
+    "day": 1,
+    "name": "World Vegan Day",
+    "type": "observance"
+  },
+  {
+    "month": 11,
+    "day": 11,
+    "name": "Veterans Day",
+    "type": "public_holiday"
+  },
+  {
+    "month": 11,
+    "day": 23,
+    "name": "Thanksgiving",
+    "type": "public_holiday"
+  },
+  {
+    "month": 12,
+    "day": 3,
+    "name": "International Day of Persons with Disabilities",
+    "type": "observance"
+  },
+  {
+    "month": 12,
+    "day": 10,
+    "name": "Human Rights Day",
+    "type": "observance"
+  },
+  {
+    "month": 12,
+    "day": 21,
+    "name": "Winter Solstice",
+    "type": "observance"
+  },
+  {
+    "month": 12,
+    "day": 24,
+    "name": "Christmas Eve",
+    "type": "public_holiday"
+  },
+  {
+    "month": 12,
+    "day": 25,
+    "name": "Christmas",
+    "type": "public_holiday"
+  },
+  {
+    "month": 12,
+    "day": 31,
+    "name": "New Year's Eve",
+    "type": "public_holiday"
+  }
+]

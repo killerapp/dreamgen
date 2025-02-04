@@ -1,0 +1,408 @@
+{
+  "styles": [
+    {
+      "name": "Abstract Art",
+      "description": "Non-representational forms and shapes emphasizing visual language over recognizable objects"
+    },
+    {
+      "name": "Abstract Expressionism",
+      "description": "Spontaneous, emotional, non-representational art with gestural brushwork and color fields"
+    },
+    {
+      "name": "Academic Art",
+      "description": "Highly finished style following classical traditions and formal rules of art academies"
+    },
+    {
+      "name": "Action Painting",
+      "description": "Dynamic, energetic application of paint with physical movement and gesture"
+    },
+    {
+      "name": "Aestheticism",
+      "description": "Art for art's sake movement emphasizing visual beauty over social themes"
+    },
+    {
+      "name": "Afrofuturism",
+      "description": "African diaspora culture combined with science fiction and futuristic elements"
+    },
+    {
+      "name": "American Barbizon",
+      "description": "Rural landscape painting inspired by French Barbizon school with atmospheric effects"
+    },
+    {
+      "name": "American Impressionism",
+      "description": "American adaptation of French Impressionism with local subjects and brighter palette"
+    },
+    {
+      "name": "American Scene Painting",
+      "description": "Realistic depictions of everyday American life and landscapes in the early 20th century"
+    },
+    {
+      "name": "Analytical Art",
+      "description": "Systematic approach to artistic creation using mathematical or scientific principles"
+    },
+    {
+      "name": "Art Brut",
+      "description": "Raw, outsider art created outside traditional art culture and training"
+    },
+    {
+      "name": "Art Deco",
+      "description": "Geometric shapes, bold colors, luxury materials, and streamlined forms of the 1920s-30s"
+    },
+    {
+      "name": "Art Informel",
+      "description": "European abstract art emphasizing spontaneous, intuitive creation"
+    },
+    {
+      "name": "Art Nouveau",
+      "description": "Organic forms, flowing lines, nature-inspired patterns and decorative elements"
+    },
+    {
+      "name": "Arte Povera",
+      "description": "Using unconventional, everyday materials to create profound artistic statements"
+    },
+    {
+      "name": "Arts and Crafts",
+      "description": "Traditional craftsmanship using simple forms and medieval, romantic styles"
+    },
+    {
+      "name": "ASCII Art",
+      "description": "Digital art created using text characters and symbols"
+    },
+    {
+      "name": "Ashcan School",
+      "description": "Realistic scenes of daily life in New York's poorer neighborhoods"
+    },
+    {
+      "name": "Assemblage",
+      "description": "Three-dimensional compositions created from found objects and mixed media"
+    },
+    {
+      "name": "Australian Tonalism",
+      "description": "Atmospheric landscapes with subtle tonal variations and muted colors"
+    },
+    {
+      "name": "Automatism",
+      "description": "Spontaneous creation without conscious control, often associated with Surrealism"
+    },
+    {
+      "name": "Baroque",
+      "description": "Dramatic, ornate, emotional intensity with rich colors and strong light-dark contrasts"
+    },
+    {
+      "name": "Bauhaus",
+      "description": "Functional design combining arts and crafts with industrial aesthetics"
+    },
+    {
+      "name": "Bengal School",
+      "description": "Indian art movement combining traditional Asian techniques with modern elements"
+    },
+    {
+      "name": "Bio Art",
+      "description": "Incorporating living tissues, bacteria, or biological processes in artwork"
+    },
+    {
+      "name": "Brutalism",
+      "description": "Raw concrete forms, exposed materials, and bold geometric shapes"
+    },
+    {
+      "name": "Byzantine Art",
+      "description": "Religious art characterized by golden mosaics, icons, and formal hierarchy"
+    },
+    {
+      "name": "Classical Realism",
+      "description": "Contemporary movement reviving traditional realistic painting techniques"
+    },
+    {
+      "name": "COBRA",
+      "description": "Spontaneous, primitive, colorful art inspired by children's drawings and folk art"
+    },
+    {
+      "name": "Color Field",
+      "description": "Large areas of flat color emphasizing emotional impact and spatial relationships"
+    },
+    {
+      "name": "Computer Art",
+      "description": "Art created or modified using computer software and digital tools"
+    },
+    {
+      "name": "Conceptual Art",
+      "description": "Ideas and concepts take precedence over traditional aesthetic and material concerns"
+    },
+    {
+      "name": "Constructivism",
+      "description": "Abstract, geometric art emphasizing industrial materials and social purpose"
+    },
+    {
+      "name": "Cubism",
+      "description": "Geometric shapes, multiple perspectives, fragmented and abstract forms"
+    },
+    {
+      "name": "Cynical Realism",
+      "description": "Chinese contemporary art movement expressing ironic and cynical views of society"
+    },
+    {
+      "name": "Cyberpunk",
+      "description": "High-tech dystopian aesthetic with neon colors and urban decay"
+    },
+    {
+      "name": "Dada",
+      "description": "Anti-art movement emphasizing absurdity, irony, and rejection of traditional values"
+    },
+    {
+      "name": "Dark Art",
+      "description": "Exploring macabre, gothic, and disturbing themes with emotional intensity"
+    },
+    {
+      "name": "De Stijl",
+      "description": "Pure abstraction using only straight lines, rectangular forms, and primary colors"
+    },
+    {
+      "name": "Digital Art",
+      "description": "Computer-generated or digitally manipulated imagery and effects"
+    },
+    {
+      "name": "Ecological Art",
+      "description": "Art addressing environmental issues and promoting ecological awareness"
+    },
+    {
+      "name": "Environmental Art",
+      "description": "Site-specific works integrating with or commenting on the natural environment"
+    },
+    {
+      "name": "Expressionism",
+      "description": "Distorted forms, intense colors, and emotional impact over realism"
+    },
+    {
+      "name": "Fauvism",
+      "description": "Wild, bold colors and loose brushwork expressing emotional intensity"
+    },
+    {
+      "name": "Feminist Art",
+      "description": "Art exploring and challenging gender issues and feminist themes"
+    },
+    {
+      "name": "Figurative Art",
+      "description": "Art retaining strong references to the real world, especially the human figure"
+    },
+    {
+      "name": "Folk Art",
+      "description": "Traditional art forms of the common people, often decorative and functional"
+    },
+    {
+      "name": "Futurism",
+      "description": "Dynamic movement, speed, and modern technology with geometric forms"
+    },
+    {
+      "name": "Generative Art",
+      "description": "Art created using autonomous systems, often computer algorithms"
+    },
+    {
+      "name": "Geometric Abstraction",
+      "description": "Non-objective art using geometric forms and mathematical principles"
+    },
+    {
+      "name": "Glitch Art",
+      "description": "Intentional digital errors, corrupted data, and technological artifacts"
+    },
+    {
+      "name": "Gothic",
+      "description": "Medieval style with pointed arches, elaborate stonework, and dramatic vertical elements"
+    },
+    {
+      "name": "Graffiti",
+      "description": "Street art using spray paint and other materials in public spaces"
+    },
+    {
+      "name": "Gutai",
+      "description": "Japanese avant-garde movement emphasizing physical interaction with materials"
+    },
+    {
+      "name": "Hard-edge Painting",
+      "description": "Abstract art with sharp, clean edges between areas of color"
+    },
+    {
+      "name": "Harlem Renaissance",
+      "description": "African American cultural movement celebrating identity through various art forms"
+    },
+    {
+      "name": "Hyperrealism",
+      "description": "Photographic precision exceeding traditional realism in detail and clarity"
+    },
+    {
+      "name": "Impressionism",
+      "description": "Capturing light effects with visible brushstrokes, everyday scenes in natural settings"
+    },
+    {
+      "name": "Installation Art",
+      "description": "Site-specific, three-dimensional works that transform a space"
+    },
+    {
+      "name": "International Style",
+      "description": "Modernist architectural style emphasizing function, clean lines, and minimal ornamentation"
+    },
+    {
+      "name": "Kinetic Art",
+      "description": "Moving parts or optical illusions creating actual or perceived motion"
+    },
+    {
+      "name": "Land Art",
+      "description": "Environmental works using natural materials and landscapes"
+    },
+    {
+      "name": "Light and Space",
+      "description": "Art focusing on perceptual phenomena, often using light as primary medium"
+    },
+    {
+      "name": "Low Poly",
+      "description": "3D graphics with minimal geometric shapes and angular aesthetics"
+    },
+    {
+      "name": "Lyrical Abstraction",
+      "description": "Fluid, spontaneous abstract painting emphasizing intuitive expression"
+    },
+    {
+      "name": "Magic Realism",
+      "description": "Realistic scenes incorporating supernatural or mysterious elements"
+    },
+    {
+      "name": "Mannerism",
+      "description": "Sophisticated, artificial style emphasizing elegant distortion and complexity"
+    },
+    {
+      "name": "Maximalism",
+      "description": "Complex, dense designs embracing excess and multiple layers of meaning"
+    },
+    {
+      "name": "Memphis Design",
+      "description": "1980s style with bold colors, geometric shapes, and playful patterns"
+    },
+    {
+      "name": "Minimalism",
+      "description": "Simple geometric forms, limited colors, emphasis on materials and space"
+    },
+    {
+      "name": "Modern Gothic",
+      "description": "Contemporary take on gothic themes with dark, mysterious, and romantic elements"
+    },
+    {
+      "name": "Modernism",
+      "description": "Breaking with traditional forms and techniques in favor of experimental approaches"
+    },
+    {
+      "name": "Neo-Expressionism",
+      "description": "Revival of expressionist painting with intense emotions and raw technique"
+    },
+    {
+      "name": "Neo-Pop",
+      "description": "Contemporary revival of pop art themes with digital and commercial influence"
+    },
+    {
+      "name": "Neoclassicism",
+      "description": "Revival of classical antiquity, emphasizing order, symmetry, and simplified grandeur"
+    },
+    {
+      "name": "Op Art",
+      "description": "Optical illusions, geometric patterns creating movement effects"
+    },
+    {
+      "name": "Performance Art",
+      "description": "Live actions and events as artistic expression"
+    },
+    {
+      "name": "Pixel Art",
+      "description": "Digital art using precise, limited resolution blocks of color"
+    },
+    {
+      "name": "Pointillism",
+      "description": "Images created from small, distinct dots of pure color"
+    },
+    {
+      "name": "Pop Art",
+      "description": "Popular culture imagery, bold colors, commercial printing styles"
+    },
+    {
+      "name": "Post-Impressionism",
+      "description": "Bold colors, distinctive brushwork, emotional impact, and symbolic meaning"
+    },
+    {
+      "name": "Post-Minimalism",
+      "description": "Reaction to minimalism incorporating organic forms and process-based art"
+    },
+    {
+      "name": "Precisionism",
+      "description": "American style depicting industrial and architectural subjects with geometric precision"
+    },
+    {
+      "name": "Psychedelic Art",
+      "description": "Bright colors, swirling patterns, and optical effects inspired by hallucinogenic experiences"
+    },
+    {
+      "name": "Realism",
+      "description": "Accurate depiction of everyday life and ordinary people without idealization"
+    },
+    {
+      "name": "Renaissance",
+      "description": "Realistic proportions, perspective, light and shadow, classical themes and harmony"
+    },
+    {
+      "name": "Rococo",
+      "description": "Light, elegant, decorative style with pastel colors and delicate ornamentation"
+    },
+    {
+      "name": "Romanticism",
+      "description": "Emotional, dramatic landscapes and scenes emphasizing nature and individual expression"
+    },
+    {
+      "name": "Socialist Realism",
+      "description": "State-sponsored realistic art promoting communist values and ideals"
+    },
+    {
+      "name": "Steampunk",
+      "description": "Victorian-era industrial aesthetics with brass, copper, and mechanical elements"
+    },
+    {
+      "name": "Street Art",
+      "description": "Urban art forms including graffiti, murals, and public installations"
+    },
+    {
+      "name": "Suprematism",
+      "description": "Abstract art based on fundamental geometric forms and pure artistic feeling"
+    },
+    {
+      "name": "Surrealism",
+      "description": "Dreamlike scenes, impossible combinations, exploration of the subconscious"
+    },
+    {
+      "name": "Symbolism",
+      "description": "Mystical, dream-like works expressing emotional and spiritual ideas through symbols"
+    },
+    {
+      "name": "Synthetism",
+      "description": "Simplified forms, pure colors, and symbolic meaning over natural appearance"
+    },
+    {
+      "name": "Tonalism",
+      "description": "Landscapes emphasizing mood through subtle variations of color and tone"
+    },
+    {
+      "name": "Transavanguardia",
+      "description": "Italian neo-expressionist movement emphasizing mythic imagery and emotional intensity"
+    },
+    {
+      "name": "Ukiyo-e",
+      "description": "Japanese woodblock prints depicting everyday life, landscapes, and theatrical scenes"
+    },
+    {
+      "name": "Vaporwave",
+      "description": "Retro aesthetics, 80s/90s nostalgia, pastel colors, and digital surrealism"
+    },
+    {
+      "name": "Video Art",
+      "description": "Art using video and audio technology as the primary medium"
+    },
+    {
+      "name": "Visionary Art",
+      "description": "Art expressing mystical, spiritual, or inner visions often with fantastic imagery"
+    }
+  ]
+}

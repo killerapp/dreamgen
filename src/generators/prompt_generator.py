@@ -1,17 +1,21 @@
 """
 Prompt generator using Ollama for local inference.
+Incorporates temporal context (time of day, day of week, and holidays)
+for more contextually aware prompts.
 """
 import json
 import os
 from typing import Optional
 
+from ..plugins import get_temporal_descriptor
+
 class PromptGenerator:
     def __init__(self, model_name: str = None):
         self.model_name = model_name or os.getenv('OLLAMA_MODEL', 'phi4:latest')
         self.example_prompts = [
-            "A bioluminescent underwater library where jellies float between shelves of waterproof books, casting ethereal blue-green light on ancient texts. Marine archaeologists in vintage diving suits study scrolls while schools of translucent fish wind between the stacks.",
-            "A cross-section view of a towering termite mound reimagined as a retrofuturistic apartment complex, with tiny robots instead of termites going about their daily routines. Each chamber shows a different aspect of their mechanical society, from power generation to data processing.",
-            "An impossible MC Escher-style train station during rush hour, where Victorian-era commuters walk on stairs that loop impossibly in multiple directions. The architecture blends Art Nouveau with mathematical impossibilities, while steam from locomotives rises in golden fractals."
+            "Cozy cafe: Steam from coffee cups, readers in corners, frost patterns on windows cast golden morning light, prismatic reflections dance.",
+            "Futuristic market: Holographic stalls mix with traditional ones, sci-fi foods under crystal dome, rainbow light filters through.",
+            "Magical post office: Elves sort letters on floating belts, mechanical reindeer power machines, fiber-optic antlers glow."
         ]
         self.conversation_history = []
         
@@ -20,12 +24,19 @@ class PromptGenerator:
         try:
             import ollama
             
+            # Get temporal context
+            temporal_context = get_temporal_descriptor()
+            
             # Build system context
             system_context = "\n".join([
                 "You are a creative prompt generator for image generation.",
                 "Generate unique and imaginative prompts that would inspire beautiful AI-generated images.",
-                "Each prompt should be distinct from previous ones while maintaining high quality.",
-                "Prompts should be detailed and descriptive, painting a vivid picture."
+                "IMPORTANT: Prompts MUST be concise and fit within 77 tokens (approximately 60 words).",
+                "Focus on vivid, impactful descriptions using fewer, carefully chosen words.",
+                f"\nCurrent temporal context: {temporal_context}",
+                "Begin the prompt with this temporal context, then add a concise but vivid scene description.",
+                "Example format: '[temporal/style context]: [concise scene description]'",
+                "Keep the final combined prompt (including context) within the 77 token limit."
             ])
             
             # Initialize conversation if empty

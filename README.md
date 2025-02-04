@@ -10,6 +10,12 @@ A Python application that continuously generates creative images using AI. It us
 - Automatic weekly directory organization for outputs
 - Continuous generation loop with optional intervals and batch settings
 - Prompt history saved alongside generated images
+- Plugin system for dynamic prompt enhancement:
+  - Time of day context (morning/afternoon/evening/night)
+  - Day of week awareness
+  - Holiday detection and theming
+  - Art style variation (90+ distinct styles)
+  - Extensible plugin architecture for custom enhancements
 
 ## Prerequisites
 
@@ -86,6 +92,55 @@ uv run imagegen --help
    uv run imagegen --version
    ```
 
+### Plugin System
+
+The application features a modular plugin system that enhances prompt generation with contextual information:
+
+1. Time of Day Plugin
+   - Automatically detects current time
+   - Categorizes into morning/afternoon/evening/night
+   - Influences scene lighting and atmosphere in prompts
+
+2. Day of Week Plugin
+   - Adds current day context
+   - Useful for generating scene-appropriate activities
+
+3. Holiday Plugin
+   - Tracks upcoming holidays
+   - Provides "holiday facts" about current day
+   - Automatically themes prompts around nearby celebrations
+
+4. Art Style Plugin
+   - Database of 90+ distinct art styles
+   - Ranges from classical to contemporary
+   - Each style includes detailed characteristics
+   - Randomly selects styles to vary artistic approach
+
+Example prompt with plugin enhancements:
+```
+night, Monday, approaching Christmas, in the style of Art Nouveau (organic forms, flowing lines, nature-inspired patterns)
+```
+
+### Creating Custom Plugins
+
+Plugins can be created by:
+1. Adding a new Python module in `src/plugins/`
+2. Implementing a function that returns contextual information
+3. Registering the plugin in `src/plugins/__init__.py`
+
+Basic plugin template:
+```python
+def get_my_context() -> str:
+    """
+    Get contextual information for prompt enhancement.
+    
+    Returns:
+        str: Context to be incorporated into the prompt
+    """
+    # Your implementation here
+    return "context string"
+```
+
 ### Interactive Mode Details
 
 Interactive Mode enables you to provide feedback on the generated prompt before finalizing image creation. When using the `--interactive` flag:
@@ -125,6 +180,7 @@ output/
 ## Known Issues
 
 - CLIP Token Limit: The current implementation uses experimental embeddings to work around CLIP's 77 token limit. This may affect prompt processing for very long descriptions.
+- Plugin Ordering: The order of plugin-provided context in the final prompt is fixed. Future versions may allow customizable ordering.
 
 ## Development
 
