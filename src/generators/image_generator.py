@@ -66,19 +66,55 @@ class ImageGenerator:
         else:
             print("WARNING: Running on CPU. This will be significantly slower.")
         
-    def initialize(self):
-        """Initialize the Flux diffusion pipeline."""
+    def check_memory_pressure(self) -> bool:
+        """Check if GPU memory pressure is too high."""
+        if self.device != "cuda":
+            return False
+            
+        allocated = torch.cuda.memory_allocated() / 1024**3
+        reserved = torch.cuda.memory_reserved() / 1024**3
+        total = torch.cuda.get_device_properties(0).total_memory / 1024**3
+        
+        # If using more than 90% of GPU memory, consider it high pressure
+        return (allocated / total) > 0.9
+
+    def force_memory_cleanup(self):
+        """Force aggressive memory cleanup."""
+        if self.device == "cuda":
+            if self.pipe is not None:
+                del self.pipe
+                self.pipe = None
+            torch.cuda.empty_cache()
+            torch.cuda.reset_peak_memory_stats()
+            
+            # Wait a moment for memory to be freed
+            import time
+            time.sleep(1)
+
+    def initialize(self, force_reinit: bool = False):
+        """Initialize the Flux diffusion pipeline.
+        
+        Args:
+            force_reinit: If True, reinitialize even if pipe exists
+        """
+        if force_reinit and self.pipe is not None:
+            self.cleanup()
+            
         if self.pipe is None:
             try:
                 # Clear CUDA cache before loading model
                 if self.device == "cuda":
-                    torch.cuda.empty_cache()
-                    torch.cuda.reset_peak_memory_stats()
+                    self.force_memory_cleanup()
                     
                 print(f"Loading model on {self.device}...")
                 
                 # Set memory management environment variables
                 os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "max_split_size_mb:512"
+                
+                # Check memory pressure before loading
+                if self.check_memory_pressure():
+                    print("High memory pressure detected, forcing cleanup...")
+                    self.force_memory_cleanup()
                 
                 # Load model with memory optimizations
                 self.pipe = DiffusionPipeline.from_pretrained(
@@ -108,14 +144,27 @@ class ImageGenerator:
                     # Monitor memory usage
                     allocated = torch.cuda.memory_allocated() / 1024**3
                     reserved = torch.cuda.memory_reserved() / 1024**3
-                    print(f"GPU Memory: {allocated:.2f} GB allocated, {reserved:.2f} GB reserved")
+                    total = torch.cuda.get_device_properties(0).total_memory / 1024**3
+                    print(f"GPU Memory: {allocated:.2f} GB allocated, {reserved:.2f} GB reserved (Total: {total:.2f} GB)")
                     
             except Exception as e:
+                self.force_memory_cleanup()  # Cleanup on error
                 raise Exception(f"Error initializing Flux model: {str(e)}")
     
-    async def generate_image(self, prompt: str, output_path: Path) -> Path:
-        """Generate an image from the given prompt and save it to the specified path."""
-        self.initialize()
+    async def generate_image(self, prompt: str, output_path: Path, force_reinit: bool = False) -> Path:
+        """Generate an image from the given prompt and save it to the specified path.
+        
+        Args:
+            prompt: The text prompt to generate from
+            output_path: Where to save the generated image
+            force_reinit: If True, force pipeline reinitialization
+        """
+        # Check memory pressure and reinitialize if needed
+        if self.check_memory_pressure():
+            print("High memory pressure detected, reinitializing pipeline...")
+            force_reinit = True
+            
+        self.initialize(force_reinit)
         
         try:
             # Track generation time
@@ -128,7 +177,9 @@ class ImageGenerator:
             if self.device == "cuda":
                 # Clear cache before generation
                 torch.cuda.empty_cache()
-                print(f"GPU Memory before generation: {torch.cuda.memory_allocated() / 1024**3:.2f} GB")
+                allocated = torch.cuda.memory_allocated() / 1024**3
+                total = torch.cuda.get_device_properties(0).total_memory / 1024**3
+                print(f"GPU Memory before generation: {allocated:.2f} GB (Total: {total:.2f} GB)")
             
             with torch.inference_mode(), torch.amp.autocast("cuda", enabled=self.device=="cuda"):
                 # Let pipeline handle both encoders internally
@@ -145,7 +196,9 @@ class ImageGenerator:
             
             if self.device == "cuda":
                 torch.cuda.synchronize()  # Ensure GPU operations are complete
-                print(f"GPU Memory after generation: {torch.cuda.memory_allocated() / 1024**3:.2f} GB")
+                allocated = torch.cuda.memory_allocated() / 1024**3
+                total = torch.cuda.get_device_properties(0).total_memory / 1024**3
+                print(f"GPU Memory after generation: {allocated:.2f} GB (Total: {total:.2f} GB)")
                 
             # Ensure output directory exists
             output_path.parent.mkdir(parents=True, exist_ok=True)

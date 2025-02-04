@@ -195,10 +195,10 @@ def generate(
                     # Cleanup
                     image_gen.cleanup()
                 except Exception as e:
-                    console.print(f"[red]Error: {str(e)}[/red]", err=True)
+                    console.print(f"[red]Error: {str(e)}[/red]")
                     raise
         except Exception as e:
-            console.print(f"[red]Error: {str(e)}[/red]", err=True)
+            console.print(f"[red]Error: {str(e)}[/red]")
             raise typer.Exit(1)
 
     try:
@@ -329,9 +329,14 @@ def loop(
                                 border_style="blue"
                             ))
 
-                            # Get output path and generate
+                            # Get output path and generate with forced reinitialization every 5 images
                             output_path = storage.get_output_path(prompt)
-                            output_path, gen_time, model_name = await image_gen.generate_image(prompt, output_path)
+                            force_reinit = (i > 0 and i % 5 == 0)  # Reinit every 5 images
+                            output_path, gen_time, model_name = await image_gen.generate_image(
+                                prompt, 
+                                output_path,
+                                force_reinit=force_reinit
+                            )
                             
                             console.print(
                                 f"[green]✓[/green] Image {i+1} generated in {gen_time:.1f}s using {model_name}\n"
@@ -340,13 +345,14 @@ def loop(
                             
                             progress.update(batch_task, advance=1)
                             
-                            # Wait if interval is specified
-                            if interval and i < batch_size - 1:
+                            # Always wait at least 1 second between generations to allow memory cleanup
+                            wait_time = max(1, interval or 0)
+                            if i < batch_size - 1:
                                 wait_task = progress.add_task(
-                                    f"[yellow]Waiting {interval}s before next generation...", 
-                                    total=interval
+                                    f"[yellow]Cooling down for {wait_time}s...", 
+                                    total=wait_time
                                 )
-                                for _ in range(interval):
+                                for _ in range(wait_time):
                                     await asyncio.sleep(1)
                                     progress.update(wait_task, advance=1)
                                 progress.remove_task(wait_task)
@@ -354,9 +360,11 @@ def loop(
                         except Exception as e:
                             console.print(f"[red]Error generating image {i+1}: {str(e)}[/red]")
                             if i < batch_size - 1:
+                                console.print("[yellow]Attempting recovery...[/yellow]")
+                                # Force cleanup and reinit on error
+                                image_gen.force_memory_cleanup()
+                                await asyncio.sleep(2)  # Wait for cleanup
                                 console.print("[yellow]Continuing with next image...[/yellow]")
-                                if interval:
-                                    await asyncio.sleep(interval)
                                 continue
                             raise
                         
@@ -374,10 +382,10 @@ def loop(
                         border_style="green"
                     ))
                 except Exception as e:
-                    console.print(f"[red]Error: {str(e)}[/red]", err=True)
+                    console.print(f"[red]Error: {str(e)}[/red]")
                     raise
         except Exception as e:
-            console.print(f"[red]Error: {str(e)}[/red]", err=True)
+            console.print(f"[red]Error: {str(e)}[/red]")
             raise typer.Exit(1)
         finally:
             # Ensure cleanup happens even if there's an error
