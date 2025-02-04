@@ -70,9 +70,16 @@ uv run imagegen --help
    uv run imagegen generate [OPTIONS]
    
    Options:
-   -i, --interactive     Enable interactive mode with prompt feedback
-   -m, --model TEXT     Ollama model to use (default: phi4:latest)
-   -p, --prompt TEXT    Provide a custom prompt
+   -i, --interactive      Enable interactive mode with prompt feedback
+   -m, --model TEXT      Ollama model to use (default: phi4:latest)
+   -f, --flux-model TEXT Choose model variant: 'dev' (quality) or 'schnell' (speed)
+   -p, --prompt TEXT     Provide a custom prompt
+   --height INT         Image height in pixels (128-2048, default: 768)
+   --width INT          Image width in pixels (128-2048, default: 1360)
+   -s, --steps INT      Number of inference steps (1-150, default: 50 for dev, 4 for schnell)
+   -g, --guidance FLOAT Guidance scale (1.0-30.0, default: 7.5 for dev, 0.0 for schnell)
+   --true-cfg FLOAT    True classifier-free guidance scale (1.0-10.0, default: 1.0)
+   --max-seq-len INT   Maximum sequence length (64-2048, default: 512)
    --cpu-only          Force CPU-only mode (not recommended)
    ```
 
@@ -84,6 +91,13 @@ uv run imagegen --help
    -b, --batch-size INT  Number of images to generate (1-100)
    -n, --interval INT   Seconds between generations
    -m, --model TEXT     Ollama model to use (default: phi4:latest)
+   -f, --flux-model TEXT Choose model variant: 'dev' (quality) or 'schnell' (speed)
+   --height INT         Image height in pixels (128-2048, default: 768)
+   --width INT          Image width in pixels (128-2048, default: 1360)
+   -s, --steps INT      Number of inference steps (1-150, default: 50 for dev, 4 for schnell)
+   -g, --guidance FLOAT Guidance scale (1.0-30.0, default: 7.5 for dev, 0.0 for schnell)
+   --true-cfg FLOAT    True classifier-free guidance scale (1.0-10.0, default: 1.0)
+   --max-seq-len INT   Maximum sequence length (64-2048, default: 512)
    --cpu-only          Force CPU-only mode (not recommended)
    ```
 
@@ -148,17 +162,37 @@ Interactive Mode enables you to provide feedback on the generated prompt before 
 - This mode is ideal if you want to refine or adjust the prompt before image processing begins.
 - After confirmation, the image generation proceeds with your input incorporated.
 
+### Image Generation Models
+
+The system supports two Flux model variants, each optimized for different use cases:
+
+1. **Dev Model** (`-f dev`): High-quality generation
+   - Default for detailed, high-fidelity images
+   - Uses 50 inference steps
+   - Guidance scale of 7.5 for strong prompt adherence
+   - Best for final, production-quality images
+   - Example: `uv run imagegen generate -f dev --height 1024 --width 1024`
+
+2. **Schnell Model** (`-f schnell`): Fast generation
+   - Optimized for rapid prototyping
+   - Uses only 4 inference steps
+   - Guidance scale of 0.0 for faster processing
+   - Best for testing prompts or quick iterations
+   - Example: `uv run imagegen generate -f schnell --steps 4 --guidance 0.0`
+
 ### Environment Variables
 
 You can customize the behavior using these environment variables:
 
 - `OLLAMA_MODEL`: Default Ollama model for prompt generation (default: phi4:latest)
 - `OLLAMA_TEMPERATURE`: Temperature for prompt generation (default: 0.7)
-- `FLUX_MODEL`: Model for image generation (default: black-forest-labs/FLUX.1-dev)
-- `IMAGE_HEIGHT`: Output image height in pixels (default: 512)
-- `IMAGE_WIDTH`: Output image width in pixels (default: 512)
-- `NUM_INFERENCE_STEPS`: Number of denoising steps (default: 30)
-- `GUIDANCE_SCALE`: Guidance scale for image generation (default: 7.5)
+- `FLUX_MODEL`: Model variant for image generation (default: dev)
+- `IMAGE_HEIGHT`: Output image height in pixels (default: 768)
+- `IMAGE_WIDTH`: Output image width in pixels (default: 1360)
+- `NUM_INFERENCE_STEPS`: Number of denoising steps (default: 50 for dev, 4 for schnell)
+- `GUIDANCE_SCALE`: Guidance scale for image generation (default: 7.5 for dev, 0.0 for schnell)
+- `TRUE_CFG_SCALE`: True classifier-free guidance scale (default: 1.0)
+- `MAX_SEQUENCE_LENGTH`: Maximum sequence length for text processing (default: 512)
 
 For example, to set a custom model in PowerShell:
 ```powershell

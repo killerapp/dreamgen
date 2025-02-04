@@ -64,6 +64,48 @@ def generate(
         "--model", "-m", 
         help="Ollama model to use for prompt generation"
     ),
+    flux_model: str = typer.Option(
+        os.getenv('FLUX_MODEL', 'dev'),
+        "--flux-model", "-f",
+        help="Flux model variant to use: 'dev' (high quality) or 'schnell' (fast)",
+        case_sensitive=False
+    ),
+    height: int = typer.Option(
+        int(os.getenv('IMAGE_HEIGHT', 768)),
+        "--height",
+        help="Height of generated image in pixels",
+        min=128, max=2048
+    ),
+    width: int = typer.Option(
+        int(os.getenv('IMAGE_WIDTH', 1360)),
+        "--width",
+        help="Width of generated image in pixels",
+        min=128, max=2048
+    ),
+    steps: int = typer.Option(
+        int(os.getenv('NUM_INFERENCE_STEPS', 50)),
+        "--steps", "-s",
+        help="Number of inference steps (more = higher quality but slower)",
+        min=1, max=150
+    ),
+    guidance: float = typer.Option(
+        float(os.getenv('GUIDANCE_SCALE', 7.5)),
+        "--guidance", "-g",
+        help="Guidance scale (how closely to follow the prompt)",
+        min=1.0, max=30.0
+    ),
+    true_cfg: float = typer.Option(
+        float(os.getenv('TRUE_CFG_SCALE', 1.0)),
+        "--true-cfg",
+        help="True classifier-free guidance scale",
+        min=1.0, max=10.0
+    ),
+    max_seq_len: int = typer.Option(
+        int(os.getenv('MAX_SEQUENCE_LENGTH', 512)),
+        "--max-seq-len",
+        help="Maximum sequence length for text processing",
+        min=64, max=2048
+    ),
     cpu_only: bool = typer.Option(
         False, "--cpu-only", 
         help="Force CPU-only mode (not recommended)"
@@ -93,7 +135,16 @@ def generate(
                     # Initialize components
                     init_task = progress.add_task("[cyan]Initializing components...", total=None)
                     prompt_gen = PromptGenerator(model_name=model)
-                    image_gen = ImageGenerator(cpu_only=cpu_only)
+                    image_gen = ImageGenerator(
+                        model_variant=flux_model.lower(),
+                        cpu_only=cpu_only,
+                        height=height,
+                        width=width,
+                        num_inference_steps=steps,
+                        guidance_scale=guidance,
+                        true_cfg_scale=true_cfg,
+                        max_sequence_length=max_seq_len
+                    )
                     storage = StorageManager()
                     progress.remove_task(init_task)
 
@@ -173,6 +224,48 @@ def loop(
         "--model", "-m", 
         help="Ollama model to use for prompt generation"
     ),
+    flux_model: str = typer.Option(
+        os.getenv('FLUX_MODEL', 'dev'),
+        "--flux-model", "-f",
+        help="Flux model variant to use: 'dev' (high quality) or 'schnell' (fast)",
+        case_sensitive=False
+    ),
+    height: int = typer.Option(
+        int(os.getenv('IMAGE_HEIGHT', 768)),
+        "--height",
+        help="Height of generated image in pixels",
+        min=128, max=2048
+    ),
+    width: int = typer.Option(
+        int(os.getenv('IMAGE_WIDTH', 1360)),
+        "--width",
+        help="Width of generated image in pixels",
+        min=128, max=2048
+    ),
+    steps: int = typer.Option(
+        int(os.getenv('NUM_INFERENCE_STEPS', 50)),
+        "--steps", "-s",
+        help="Number of inference steps (more = higher quality but slower)",
+        min=1, max=150
+    ),
+    guidance: float = typer.Option(
+        float(os.getenv('GUIDANCE_SCALE', 7.5)),
+        "--guidance", "-g",
+        help="Guidance scale (how closely to follow the prompt)",
+        min=1.0, max=30.0
+    ),
+    true_cfg: float = typer.Option(
+        float(os.getenv('TRUE_CFG_SCALE', 1.0)),
+        "--true-cfg",
+        help="True classifier-free guidance scale",
+        min=1.0, max=10.0
+    ),
+    max_seq_len: int = typer.Option(
+        int(os.getenv('MAX_SEQUENCE_LENGTH', 512)),
+        "--max-seq-len",
+        help="Maximum sequence length for text processing",
+        min=64, max=2048
+    ),
     cpu_only: bool = typer.Option(
         False, "--cpu-only", 
         help="Force CPU-only mode (not recommended)"
@@ -198,7 +291,16 @@ def loop(
                     # Initialize components once
                     init_task = progress.add_task("[cyan]Initializing models...", total=None)
                     prompt_gen = PromptGenerator(model_name=model)
-                    image_gen = ImageGenerator(cpu_only=cpu_only)
+                    image_gen = ImageGenerator(
+                        model_variant=flux_model.lower(),
+                        cpu_only=cpu_only,
+                        height=height,
+                        width=width,
+                        num_inference_steps=steps,
+                        guidance_scale=guidance,
+                        true_cfg_scale=true_cfg,
+                        max_sequence_length=max_seq_len
+                    )
                     storage = StorageManager()
                     progress.remove_task(init_task)
                     
