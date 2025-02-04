@@ -118,6 +118,10 @@ class ImageGenerator:
         self.initialize()
         
         try:
+            # Track generation time
+            import time
+            start_time = time.time()
+            
             # Generate the image
             print(f"Generating image on {self.device}...")
             
@@ -149,7 +153,10 @@ class ImageGenerator:
             # Save the image
             image.save(output_path)
             
-            return output_path
+            # Calculate generation time
+            generation_time = time.time() - start_time
+            
+            return output_path, generation_time, self.model_name.split('/')[-1]
                 
         except Exception as e:
             if self.device == "cuda":

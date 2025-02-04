@@ -177,14 +177,17 @@ def generate(
                     
                     # Generate image
                     image_task = progress.add_task("[cyan]Generating image...", total=None)
-                    await image_gen.generate_image(generated_prompt, output_path)
+                    output_path, gen_time, model_name = await image_gen.generate_image(generated_prompt, output_path)
                     progress.remove_task(image_task)
                     
-                    # Show success message
+                    # Show success message with details
                     console.print(Panel(
                         f"[bold green]Image generated successfully![/bold green]\n\n"
                         f"📁 Saved to: {output_path}\n"
-                        f"📝 Prompt saved to: {output_path.with_suffix('.txt')}",
+                        f"📝 Prompt saved to: {output_path.with_suffix('.txt')}\n\n"
+                        f"[dim]Model: {model_name}\n"
+                        f"Time: {gen_time:.1f}s\n"
+                        f"Prompt: {generated_prompt}[/dim]",
                         title="Success",
                         border_style="green"
                     ))
@@ -328,10 +331,11 @@ def loop(
 
                             # Get output path and generate
                             output_path = storage.get_output_path(prompt)
-                            await image_gen.generate_image(prompt, output_path)
+                            output_path, gen_time, model_name = await image_gen.generate_image(prompt, output_path)
                             
                             console.print(
-                                f"[green]✓[/green] Image {i+1} saved to: {output_path}"
+                                f"[green]✓[/green] Image {i+1} generated in {gen_time:.1f}s using {model_name}\n"
+                                f"   📁 {output_path}"
                             )
                             
                             progress.update(batch_task, advance=1)
@@ -361,7 +365,11 @@ def loop(
                     image_gen.cleanup()
                     console.print(Panel(
                         f"[bold green]Batch generation complete![/bold green]\n"
-                        f"Successfully created {batch_size} images.",
+                        f"Successfully created {batch_size} images using {model_name}\n\n"
+                        f"[dim]Model: {model_name}\n"
+                        f"Steps: {steps}\n"
+                        f"Guidance: {guidance}\n"
+                        f"Resolution: {width}x{height}[/dim]",
                         title="Success",
                         border_style="green"
                     ))
