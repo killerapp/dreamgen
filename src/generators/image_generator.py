@@ -9,11 +9,6 @@ from diffusers import DiffusionPipeline
 from PIL import Image
 
 class ImageGenerator:
-    FLUX_MODELS = {
-        "dev": "black-forest-labs/FLUX.1-dev",      # High quality, ~50 steps
-        "schnell": "black-forest-labs/FLUX.1-schnell"  # Fast generation, ~4 steps
-    }
-
     def __init__(self, 
                  model_variant: str = None, 
                  cpu_only: bool = False,
@@ -26,7 +21,7 @@ class ImageGenerator:
         """Initialize the image generator with configurable parameters.
         
         Args:
-            model_variant: Which Flux model variant to use ('dev' or 'schnell')
+            model_variant: Which Flux model variant to use (full model path)
             cpu_only: Whether to force CPU-only mode
             height: Height of generated images (default from env or 768)
             width: Width of generated images (default from env or 1360)
@@ -35,13 +30,8 @@ class ImageGenerator:
             true_cfg_scale: True classifier-free guidance scale (default from env or 1.0)
             max_sequence_length: Max sequence length for text processing (default from env or 512)
         """
-        env_model = os.getenv('FLUX_MODEL', 'dev')
-        model_variant = model_variant or env_model
-        
-        if model_variant not in self.FLUX_MODELS:
-            raise ValueError(f"Invalid model variant '{model_variant}'. Must be one of: {', '.join(self.FLUX_MODELS.keys())}")
-            
-        self.model_name = self.FLUX_MODELS[model_variant]
+        env_model = os.getenv('FLUX_MODEL', 'black-forest-labs/FLUX.1-dev')
+        self.model_name = model_variant or env_model
         self.height = height or int(os.getenv('IMAGE_HEIGHT', 768))
         self.width = width or int(os.getenv('IMAGE_WIDTH', 1360))
         self.num_inference_steps = num_inference_steps or int(os.getenv('NUM_INFERENCE_STEPS', 50))
