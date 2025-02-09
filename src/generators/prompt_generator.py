@@ -32,6 +32,7 @@ class PromptGenerator:
                 "You are a creative prompt generator for image generation.",
                 "Generate unique and imaginative prompts that would inspire beautiful AI-generated images.",
                 "IMPORTANT: Prompts MUST be concise and fit within 77 tokens (approximately 60 words).",
+                "IMPORTANT: Do not have a preamble or explain the prompt, output ONLY the prompt itself.",
                 "Focus on vivid, impactful descriptions using fewer, carefully chosen words.",
                 f"\nCurrent temporal context: {temporal_context}",
                 "Begin the prompt with this temporal context, then add a concise but vivid scene description.",
