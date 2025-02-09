@@ -160,6 +160,7 @@ class ImageGenerator:
             # Track generation time
             import time
             start_time = time.time()
+            print(f"Using model: {self.model_name}")
             
             # Generate the image
             print(f"Generating image on {self.device}...")
