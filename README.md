@@ -1,6 +1,7 @@
 # Continuous Image Generation
 
 A Python application that continuously generates creative images using AI. It uses Ollama for generating creative prompts and Flux 1.1 for image generation.
+![ComfyUI_00196_](https://github.com/user-attachments/assets/c5534dd2-878f-484f-932b-79df132c9481)
 
 ## Features
 
