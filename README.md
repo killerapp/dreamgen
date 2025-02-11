@@ -116,16 +116,12 @@ The application features a modular plugin system that enhances prompt generation
    - Categorizes into morning/afternoon/evening/night
    - Influences scene lighting and atmosphere in prompts
 
-2. Day of Week Plugin
-   - Adds current day context
-   - Useful for generating scene-appropriate activities
-
-3. Holiday Plugin
+2. Holiday Plugin
    - Tracks upcoming holidays
    - Provides "holiday facts" about current day
    - Automatically themes prompts around nearby celebrations
 
-4. Art Style Plugin
+3. Art Style Plugin
    - Database of 90+ distinct art styles
    - Ranges from classical to contemporary
    - Each style includes detailed characteristics
