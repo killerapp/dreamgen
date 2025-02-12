@@ -1,6 +1,5 @@
 """
 Command-line interface for the continuous image generation system.
-Provides a unified interface for generating AI images with various options.
 """
 import asyncio
 import os
@@ -9,12 +8,22 @@ from typing import Optional
 
 import typer
 from rich.console import Console
-from rich.progress import Progress, SpinnerColumn, TextColumn, TimeElapsedColumn
+from rich.progress import (
+    Progress, 
+    SpinnerColumn, 
+    TextColumn, 
+    TimeElapsedColumn,
+    BarColumn,
+    TaskProgressColumn,
+    MofNCompleteColumn
+)
 from rich.panel import Panel
 
 from ..generators.prompt_generator import PromptGenerator
 from ..generators.image_generator import ImageGenerator
 from .storage import StorageManager
+from .config import Config
+from .metrics import MetricsCollector
 
 # Initialize rich console for better output
 console = Console()
@@ -23,6 +32,13 @@ app = typer.Typer(
     no_args_is_help=True,
     rich_markup_mode="rich",
 )
+
+# Initialize app state
+class AppState:
+    def __init__(self):
+        self.config: Optional[Config] = None
+
+app.state = AppState()
 
 def version_callback(value: bool):
     """Display version information."""
@@ -44,6 +60,10 @@ def main(
         help="Show version information and exit",
         is_eager=True
     ),
+    config_file: Optional[Path] = typer.Option(
+        None, "--config", "-c",
+        help="Path to configuration file"
+    )
 ):
     """
     🎨 Continuous Image Generation System
@@ -51,7 +71,11 @@ def main(
     Generate AI images using Ollama for prompts and Flux for image generation.
     Run with 'uv run imagegen' followed by a command.
     """
-    pass
+    if config_file:
+        if not config_file.exists():
+            console.print(f"[yellow]Warning: Config file {config_file} not found, using defaults[/yellow]")
+        else:
+            app.state.config = Config.from_file(config_file)
 
 @app.command(help="Generate a single image with optional interactive prompt refinement")
 def generate(
@@ -59,70 +83,12 @@ def generate(
         False, "--interactive", "-i", 
         help="Enable interactive mode with prompt feedback"
     ),
-    model: str = typer.Option(
-        os.getenv('OLLAMA_MODEL', 'phi4:latest'), 
-        "--model", "-m", 
-        help="Ollama model to use for prompt generation"
-    ),
-    flux_model: str = typer.Option(
-        os.getenv('FLUX_MODEL', 'dev'),
-        "--flux-model", "-f",
-        help="Flux model variant to use: 'dev' (high quality) or 'schnell' (fast)",
-        case_sensitive=False
-    ),
-    height: int = typer.Option(
-        int(os.getenv('IMAGE_HEIGHT', 768)),
-        "--height",
-        help="Height of generated image in pixels",
-        min=128, max=2048
-    ),
-    width: int = typer.Option(
-        int(os.getenv('IMAGE_WIDTH', 1360)),
-        "--width",
-        help="Width of generated image in pixels",
-        min=128, max=2048
-    ),
-    steps: int = typer.Option(
-        int(os.getenv('NUM_INFERENCE_STEPS', 50)),
-        "--steps", "-s",
-        help="Number of inference steps (more = higher quality but slower)",
-        min=1, max=150
-    ),
-    guidance: float = typer.Option(
-        float(os.getenv('GUIDANCE_SCALE', 7.5)),
-        "--guidance", "-g",
-        help="Guidance scale (how closely to follow the prompt)",
-        min=1.0, max=30.0
-    ),
-    true_cfg: float = typer.Option(
-        float(os.getenv('TRUE_CFG_SCALE', 1.0)),
-        "--true-cfg",
-        help="True classifier-free guidance scale",
-        min=1.0, max=10.0
-    ),
-    max_seq_len: int = typer.Option(
-        int(os.getenv('MAX_SEQUENCE_LENGTH', 512)),
-        "--max-seq-len",
-        help="Maximum sequence length for text processing",
-        min=64, max=2048
-    ),
-    cpu_only: bool = typer.Option(
-        False, "--cpu-only", 
-        help="Force CPU-only mode (not recommended)"
-    ),
     prompt: Optional[str] = typer.Option(
         None, "--prompt", "-p", 
         help="Provide a custom prompt for direct inference"
-    ),
+    )
 ) -> None:
-    """
-    Generate a single image using AI-generated prompts or a custom prompt.
-    
-    Examples:
-        uv run imagegen generate
-        uv run imagegen generate --interactive
-        uv run imagegen generate --prompt "your custom prompt"
-    """
+    """Generate a single image using AI-generated prompts or a custom prompt."""
     async def _generate() -> None:
         try:
             with Progress(
@@ -130,23 +96,19 @@ def generate(
                 TextColumn("[progress.description]{task.description}"),
                 TimeElapsedColumn(),
                 console=console,
+                transient=True  # Hide finished tasks
             ) as progress:
                 try:
                     # Initialize components
                     init_task = progress.add_task("[cyan]Initializing components...", total=None)
-                    prompt_gen = PromptGenerator(model_name=model)
-                    image_gen = ImageGenerator(
-                        model_variant=flux_model.lower(),
-                        cpu_only=cpu_only,
-                        height=height,
-                        width=width,
-                        num_inference_steps=steps,
-                        guidance_scale=guidance,
-                        true_cfg_scale=true_cfg,
-                        max_sequence_length=max_seq_len
-                    )
+                    prompt_gen = PromptGenerator(app.state.config)
+                    image_gen = ImageGenerator(app.state.config)
                     storage = StorageManager()
+                    metrics = MetricsCollector(app.state.config.system.log_dir / "metrics")
                     progress.remove_task(init_task)
+
+                    # Start metrics collection
+                    metrics.start_batch()
 
                     # Use provided prompt or generate one
                     if prompt:
@@ -192,8 +154,13 @@ def generate(
                         border_style="green"
                     ))
                     
+                    # End metrics collection
+                    metrics.end_batch()
+                    
                     # Cleanup
+                    prompt_gen.cleanup()
                     image_gen.cleanup()
+                    
                 except Exception as e:
                     console.print(f"[red]Error: {str(e)}[/red]")
                     raise
@@ -221,106 +188,42 @@ def loop(
         None, "--interval", "-n", 
         help="Interval in seconds between generations",
         min=0
-    ),
-    model: str = typer.Option(
-        os.getenv('OLLAMA_MODEL', 'phi4:latest'), 
-        "--model", "-m", 
-        help="Ollama model to use for prompt generation"
-    ),
-    flux_model: str = typer.Option(
-        os.getenv('FLUX_MODEL', 'dev'),
-        "--flux-model", "-f",
-        help="Flux model variant to use: 'dev' (high quality) or 'schnell' (fast)",
-        case_sensitive=False
-    ),
-    height: int = typer.Option(
-        int(os.getenv('IMAGE_HEIGHT', 768)),
-        "--height",
-        help="Height of generated image in pixels",
-        min=128, max=2048
-    ),
-    width: int = typer.Option(
-        int(os.getenv('IMAGE_WIDTH', 1360)),
-        "--width",
-        help="Width of generated image in pixels",
-        min=128, max=2048
-    ),
-    steps: int = typer.Option(
-        int(os.getenv('NUM_INFERENCE_STEPS', 50)),
-        "--steps", "-s",
-        help="Number of inference steps (more = higher quality but slower)",
-        min=1, max=150
-    ),
-    guidance: float = typer.Option(
-        float(os.getenv('GUIDANCE_SCALE', 7.5)),
-        "--guidance", "-g",
-        help="Guidance scale (how closely to follow the prompt)",
-        min=1.0, max=30.0
-    ),
-    true_cfg: float = typer.Option(
-        float(os.getenv('TRUE_CFG_SCALE', 1.0)),
-        "--true-cfg",
-        help="True classifier-free guidance scale",
-        min=1.0, max=10.0
-    ),
-    max_seq_len: int = typer.Option(
-        int(os.getenv('MAX_SEQUENCE_LENGTH', 512)),
-        "--max-seq-len",
-        help="Maximum sequence length for text processing",
-        min=64, max=2048
-    ),
-    cpu_only: bool = typer.Option(
-        False, "--cpu-only", 
-        help="Force CPU-only mode (not recommended)"
-    ),
+    )
 ) -> None:
-    """
-    Generate a batch of images with unique prompts.
-    
-    Examples:
-        uv run imagegen loop
-        uv run imagegen loop --batch-size 10
-        uv run imagegen loop --interval 60
-    """
+    """Generate a batch of images with unique prompts."""
     async def _loop() -> None:
         try:
             with Progress(
                 SpinnerColumn(),
                 TextColumn("[progress.description]{task.description}"),
+                BarColumn(),
+                TaskProgressColumn(),
+                MofNCompleteColumn(),
                 TimeElapsedColumn(),
                 console=console,
+                transient=True  # Hide finished tasks
             ) as progress:
                 try:
-                    # Initialize components once
+                    # Initialize components
                     init_task = progress.add_task("[cyan]Initializing models...", total=None)
-                    prompt_gen = PromptGenerator(model_name=model)
-                    image_gen = ImageGenerator(
-                        model_variant=flux_model.lower(),
-                        cpu_only=cpu_only,
-                        height=height,
-                        width=width,
-                        num_inference_steps=steps,
-                        guidance_scale=guidance,
-                        true_cfg_scale=true_cfg,
-                        max_sequence_length=max_seq_len
-                    )
+                    prompt_gen = PromptGenerator(app.state.config)
+                    image_gen = ImageGenerator(app.state.config)
                     storage = StorageManager()
+                    metrics = MetricsCollector(app.state.config.system.log_dir / "metrics")
                     progress.remove_task(init_task)
+                    
+                    # Start metrics collection
+                    metrics.start_batch()
                     
                     console.print(f"\n[bold]Starting batch generation of {batch_size} images...[/bold]")
                     
                     batch_task = progress.add_task(
-                        "[cyan]Generating batch", 
+                        "[cyan]Generating images", 
                         total=batch_size
                     )
                     
                     for i in range(batch_size):
                         try:
-                            progress.update(
-                                batch_task,
-                                description=f"[cyan]Generating image {i+1}/{batch_size}..."
-                            )
-                            
                             # Generate prompt
                             prompt = await prompt_gen.generate_prompt()
                             console.print(Panel(
@@ -329,7 +232,7 @@ def loop(
                                 border_style="blue"
                             ))
 
-                            # Get output path and generate with forced reinitialization every 5 images
+                            # Get output path and generate
                             output_path = storage.get_output_path(prompt)
                             force_reinit = (i > 0 and i % 5 == 0)  # Reinit every 5 images
                             output_path, gen_time, model_name = await image_gen.generate_image(
@@ -345,55 +248,45 @@ def loop(
                             
                             progress.update(batch_task, advance=1)
                             
-                            # Always wait at least 1 second between generations to allow memory cleanup
+                            # Always wait at least 1 second between generations
                             wait_time = max(1, interval or 0)
                             if i < batch_size - 1:
-                                wait_task = progress.add_task(
-                                    f"[yellow]Cooling down for {wait_time}s...", 
-                                    total=wait_time
-                                )
-                                for _ in range(wait_time):
-                                    await asyncio.sleep(1)
-                                    progress.update(wait_task, advance=1)
-                                progress.remove_task(wait_task)
+                                await asyncio.sleep(wait_time)
                                 
                         except Exception as e:
                             console.print(f"[red]Error generating image {i+1}: {str(e)}[/red]")
                             if i < batch_size - 1:
                                 console.print("[yellow]Attempting recovery...[/yellow]")
-                                # Force cleanup and reinit on error
-                                image_gen.force_memory_cleanup()
                                 await asyncio.sleep(2)  # Wait for cleanup
                                 console.print("[yellow]Continuing with next image...[/yellow]")
                                 continue
                             raise
-                        
-                    # Final cleanup
-                    prompt_gen.cleanup()
-                    image_gen.cleanup()
+                    
+                    # End metrics collection and show summary
+                    metrics.end_batch()
+                    perf_metrics = metrics.get_performance_metrics()
+                    
                     console.print(Panel(
                         f"[bold green]Batch generation complete![/bold green]\n"
                         f"Successfully created {batch_size} images using {model_name}\n\n"
-                        f"[dim]Model: {model_name}\n"
-                        f"Steps: {steps}\n"
-                        f"Guidance: {guidance}\n"
-                        f"Resolution: {width}x{height}[/dim]",
+                        f"[dim]Performance Metrics:\n"
+                        f"Average Generation Time: {perf_metrics.get('avg_generation_time', 0):.1f}s\n"
+                        f"Average GPU Memory: {perf_metrics.get('avg_gpu_memory', 0):.1f} GB\n"
+                        f"Success Rate: {perf_metrics.get('success_rate', 0)*100:.1f}%[/dim]",
                         title="Success",
                         border_style="green"
                     ))
+                    
+                    # Final cleanup
+                    prompt_gen.cleanup()
+                    image_gen.cleanup()
+                    
                 except Exception as e:
                     console.print(f"[red]Error: {str(e)}[/red]")
                     raise
         except Exception as e:
             console.print(f"[red]Error: {str(e)}[/red]")
             raise typer.Exit(1)
-        finally:
-            # Ensure cleanup happens even if there's an error
-            try:
-                prompt_gen.cleanup()
-                image_gen.cleanup()
-            except:
-                pass
 
     try:
         asyncio.run(_loop())
