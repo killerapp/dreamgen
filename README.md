@@ -16,6 +16,7 @@ A Python application that continuously generates creative images using AI. It us
   - Day of week awareness
   - Holiday detection and theming
   - Art style variation (90+ distinct styles)
+  - Real-time weather conditions integration
   - Extensible plugin architecture for custom enhancements
 
 ## Prerequisites
@@ -127,9 +128,15 @@ The application features a modular plugin system that enhances prompt generation
    - Each style includes detailed characteristics
    - Randomly selects styles to vary artistic approach
 
+4. Weather Plugin
+   - Fetches real-time weather data using Open-Meteo API
+   - Provides temperature, humidity, and wind conditions
+   - Includes descriptive weather states (clear, cloudy, rain, etc.)
+   - Automatically updates with current conditions
+
 Example prompt with plugin enhancements:
 ```
-night, Monday, approaching Christmas, in the style of Art Nouveau (organic forms, flowing lines, nature-inspired patterns)
+night, Monday, approaching Christmas with clear sky, 22°C temperature, 65% humidity, and 10 km/h winds, in the style of Art Nouveau (organic forms, flowing lines, nature-inspired patterns)
 ```
 
 ### Creating Custom Plugins

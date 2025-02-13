@@ -153,6 +153,17 @@ The plugin system follows these key design principles:
      - Avoids consecutive repetition
      - Singleton pattern for efficient data loading
 
+6. **Weather Plugin**
+   - Location: src/plugins/weather.py
+   - Purpose: Provides real-time weather conditions
+   - Implementation: Uses Open-Meteo API for weather data
+   - Features:
+     - Current temperature and humidity
+     - Wind speed information
+     - Descriptive weather states
+     - Singleton pattern for efficient API usage
+     - No API key required
+
 ### Plugin Integration
 
 The prompt generator integrates plugins through these steps:

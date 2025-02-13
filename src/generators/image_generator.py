@@ -1,14 +1,16 @@
 """
 Image generator using Flux 1.1 transformers model.
+Includes support for meme text overlay.
 """
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import Optional, Tuple, List
 import os
 import time
 import logging
+import re
 import torch
 from diffusers import DiffusionPipeline
-from PIL import Image
+from PIL import Image, ImageDraw, ImageFont
 
 from ..utils.error_handler import handle_errors, ModelError, ResourceError
 from ..utils.memory_manager import MemoryManager
@@ -35,6 +37,16 @@ class ImageGenerator:
             true_cfg_scale: True classifier-free guidance scale (default from env or 1.0)
             max_sequence_length: Max sequence length for text processing (default from env or 512)
         """
+        # Font setup for meme text
+        self.font_size = 72
+        self.font = None
+        try:
+            # Try to load Impact font (standard meme font)
+            self.font = ImageFont.truetype("impact.ttf", self.font_size)
+        except OSError:
+            # Fallback to default font if Impact not available
+            print("Impact font not found, using default font")
+            self.font = ImageFont.load_default()
         self.config = config
         self.model_name = config.model.flux_model
         self.height = config.image.height
@@ -107,6 +119,71 @@ class ImageGenerator:
         allocated, reserved, total = self.memory_manager.get_gpu_memory_info()
         print(f"GPU Memory: {allocated:.2f} GB allocated, {reserved:.2f} GB reserved (Total: {total:.2f} GB)")
 
+    def _parse_meme_text(self, prompt: str) -> Tuple[Optional[str], Optional[str]]:
+        """Parse top and bottom meme text from the prompt."""
+        # Look for text positioned at top/bottom
+        top_match = re.search(r"text ['\"](.*?)['\"] (?:positioned |written |)at the top", prompt)
+        bottom_match = re.search(r"text ['\"](.*?)['\"] (?:positioned |written |)at the bottom", prompt)
+        
+        top_text = top_match.group(1) if top_match else None
+        bottom_text = bottom_match.group(1) if bottom_match else None
+        
+        return top_text, bottom_text
+    
+    def _add_text_outline(self, draw: ImageDraw, x: int, y: int, text: str, font: ImageFont, stroke_width: int = 3) -> None:
+        """Add black outline to text for better visibility."""
+        # Draw black outline
+        for adj_x in range(-stroke_width, stroke_width + 1):
+            for adj_y in range(-stroke_width, stroke_width + 1):
+                draw.text((x + adj_x, y + adj_y), text, font=font, fill="black")
+        # Draw white text on top
+        draw.text((x, y), text, font=font, fill="white")
+    
+    def _add_text_overlay(self, image: Image, top_text: Optional[str], bottom_text: Optional[str]) -> Image:
+        """Add meme text overlay to the image."""
+        if not (top_text or bottom_text):
+            return image
+            
+        # Create draw object
+        draw = ImageDraw.Draw(image)
+        
+        # Calculate text sizes and positions
+        padding = 20
+        
+        if top_text:
+            # Adjust font size to fit width
+            font_size = self.font_size
+            while True:
+                font = ImageFont.truetype("impact.ttf", font_size) if self.font != ImageFont.load_default() else self.font
+                text_width = draw.textlength(top_text, font=font)
+                if text_width <= image.width - 2 * padding or font_size <= 30:
+                    break
+                font_size -= 2
+            
+            # Draw top text
+            text_height = font.getsize(top_text)[1]
+            x = (image.width - text_width) // 2
+            y = padding
+            self._add_text_outline(draw, x, y, top_text, font)
+        
+        if bottom_text:
+            # Adjust font size to fit width
+            font_size = self.font_size
+            while True:
+                font = ImageFont.truetype("impact.ttf", font_size) if self.font != ImageFont.load_default() else self.font
+                text_width = draw.textlength(bottom_text, font=font)
+                if text_width <= image.width - 2 * padding or font_size <= 30:
+                    break
+                font_size -= 2
+            
+            # Draw bottom text
+            text_height = font.getsize(bottom_text)[1]
+            x = (image.width - text_width) // 2
+            y = image.height - text_height - padding
+            self._add_text_outline(draw, x, y, bottom_text, font)
+        
+        return image
+    
     @handle_errors(error_type=ModelError, retries=1, cleanup_func=lambda: self.memory_manager.optimize_memory_usage())
     async def generate_image(self, prompt: str, output_path: Path, force_reinit: bool = False) -> Tuple[Path, float, str]:
         """Generate an image from the given prompt."""
@@ -133,9 +210,14 @@ class ImageGenerator:
                     max_sequence_length=self.max_sequence_length,
                 ).images[0]
             
+            # Parse and add meme text if present
+            top_text, bottom_text = self._parse_meme_text(prompt)
+            if top_text or bottom_text:
+                image = self._add_text_overlay(image, top_text, bottom_text)
+            
             # Save image
             output_path.parent.mkdir(parents=True, exist_ok=True)
-            image.save(output_path)
+            image.save(output_path, quality=95)
             
             # Update metrics
             metrics.generation_time = time.time() - start_time

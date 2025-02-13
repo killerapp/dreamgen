@@ -19,9 +19,9 @@ class PromptGenerator:
         self.config = config
         self.model_name = config.model.ollama_model
         self.example_prompts = [
-            "Cozy cafe: Steam from coffee cups, readers in corners, frost patterns on windows cast golden morning light, prismatic reflections dance.",
-            "Futuristic market: Holographic stalls mix with traditional ones, sci-fi foods under crystal dome, rainbow light filters through.",
-            "Magical post office: Elves sort letters on floating belts, mechanical reindeer power machines, fiber-optic antlers glow."
+            "Morning with clear sky, 18°C: Cozy cafe scene, steam rising from coffee cups mingles with warm sunbeams, readers bask in gentle morning light.",
+            "Afternoon with light rain, 22°C: Market stalls protected by iridescent force fields, shoppers in flowing raincoats, puddles reflecting neon signs.",
+            "Evening with strong winds, 15°C: Enchanted post office, letters swirling in wind currents, magical lanterns swaying, autumn leaves dancing."
         ]
         self.conversation_history = []
         
@@ -45,8 +45,12 @@ class PromptGenerator:
                 "IMPORTANT: Do not have a preamble or explain the prompt, output ONLY the prompt itself.",
                 "Focus on vivid, impactful descriptions using fewer, carefully chosen words.",
                 f"\nCurrent temporal context: {temporal_context}",
-                "Begin the prompt with this temporal context, then add a concise but vivid scene description.",
-                "Example format: '[temporal/style context]: [concise scene description]'",
+                # If temporal context contains meme formatting, provide meme-specific guidance
+                "If the context includes meme formatting, create a scene that emphasizes the text placement and style,",
+                "making sure the text is clearly visible and follows classic meme aesthetics.",
+                "For non-meme contexts, begin with the temporal context and incorporate weather naturally.",
+                "Let the context influence the mood, lighting, and atmosphere of the scene.",
+                "Example format: '[context]: [concise scene description]'",
                 "Keep the final combined prompt (including context) within the 77 token limit."
             ])
             
