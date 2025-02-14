@@ -1,205 +1,142 @@
-# Continuous Image Generation
+# 🤖 Do AIs Dream of Creative Prompts?
 
-A Python application that continuously generates creative images using AI. It uses Ollama for generating creative prompts and Flux 1.1 for image generation.
+A Python application that continuously generates creative images using AI. It uses Ollama for generating creative prompts and Flux for image generation. Let your machine dream up endless artistic possibilities! ✨
+
+Like electric sheep in the dreams of androids, this project explores the boundaries between human and artificial creativity. What does AI imagine when we let it dream? 🌠
+
 ![ComfyUI_00196_](https://github.com/user-attachments/assets/c5534dd2-878f-484f-932b-79df132c9481)
 
-## Features
+## 🚀 Quick Start
 
-- AI-powered prompt generation using Ollama
-- Image generation using Flux 1.1 transformers model
-- Interactive mode for prompt feedback and editing
-- Automatic weekly directory organization for outputs
-- Continuous generation loop with optional intervals and batch settings
-- Prompt history saved alongside generated images
-- Plugin system for dynamic prompt enhancement:
-  - Time of day context (morning/afternoon/evening/night)
-  - Day of week awareness
-  - Holiday detection and theming
-  - Art style variation (90+ distinct styles)
-  - Extensible plugin architecture for custom enhancements
+1. Install prerequisites:
+   - Python 3.11 or higher
+   - Ollama (from [ollama.ai](https://ollama.ai))
+   - CUDA-capable GPU (8GB+ VRAM recommended)
+   - uv package manager (install using [astral](https://astral.sh/uv/install))
 
-## Prerequisites
-
-- Python 3.11 or higher
-- Ollama installed and running locally
-- CUDA-capable GPU with at least 8GB VRAM recommended
-- uv package manager (install using `pip install uv`)
-
-## Installation
-
-1. Clone the repository:
-   ```powershell
+2. Set up the project:
+   ```bash
    git clone https://github.com/killerapp/continuous-image-gen
    cd continuous-image-gen
+   uv sync  # Install dependencies
    ```
 
-2. Set up the project using uv:
-   ```powershell
-   # Initialize virtual environment and install dependencies
-   uv sync
-   
-   # For development with extra dependencies
-   uv sync --dev
+3. Let the magic happen! ✨
+   ```bash
+   # Single image
+   uv run imagegen generate
+
+   # With interactive prompt feedback
+   uv run imagegen generate --interactive
+
+   # Multiple images (perfect for coffee breaks ☕)
+   uv run imagegen loop --batch-size 10 --interval 300
    ```
 
-Note: Always use `uv sync` when updating dependencies or switching branches to ensure your environment matches the project requirements.
+## ✨ Features
 
-## Usage
+- AI-powered prompt generation using Ollama
+- Image generation using Flux transformers
+- Interactive mode for prompt feedback (be the art director!)
+- Weekly organized outputs with prompt history
+- Plugin system for dynamic prompt enhancement:
+  - Time of day context (morning/afternoon/evening/night)
+  - Holiday detection and theming (because every day is special 🎉)
+  - Art style variation (90+ distinct styles)
+  - Extensible plugin architecture (PRs welcome! 🙌)
 
-The application provides an intuitive CLI powered by Typer. All commands are executed using `uv run imagegen`.
+## 🎮 Command Reference
 
-### Quick Start
+### Generate Single Image
+```bash
+uv run imagegen generate [OPTIONS]
 
-```powershell
-# Generate a single image
-uv run imagegen generate
-
-# Generate with interactive prompt feedback
-uv run imagegen generate --interactive
-
-# Generate multiple images
-uv run imagegen loop --batch-size 10 --interval 300
-
-# Show help and available options
-uv run imagegen --help
+Options:
+-i, --interactive      Enable interactive mode
+-m, --model TEXT      Ollama model (default: phi4:latest)
+-f, --flux-model TEXT Model variant: 'dev' or 'schnell'
+-p, --prompt TEXT     Custom prompt
+--height INT         Image height (128-2048, default: 768)
+--width INT          Image width (128-2048, default: 1360)
+-s, --steps INT      Inference steps (1-150)
+-g, --guidance FLOAT Guidance scale (1.0-30.0)
+--true-cfg FLOAT    True CFG scale (1.0-10.0)
+--cpu-only          Force CPU mode (slower but hey, it works! 🐌)
 ```
 
-### Available Commands
+### Generate Multiple Images
+```bash
+uv run imagegen loop [OPTIONS]
 
-1. `generate` - Create a single image
-   ```powershell
-   uv run imagegen generate [OPTIONS]
-   
-   Options:
-   -i, --interactive      Enable interactive mode with prompt feedback
-   -m, --model TEXT      Ollama model to use (default: phi4:latest)
-   -f, --flux-model TEXT Choose model variant: 'dev' (quality) or 'schnell' (speed)
-   -p, --prompt TEXT     Provide a custom prompt
-   --height INT         Image height in pixels (128-2048, default: 768)
-   --width INT          Image width in pixels (128-2048, default: 1360)
-   -s, --steps INT      Number of inference steps (1-150, default: 50 for dev, 4 for schnell)
-   -g, --guidance FLOAT Guidance scale (1.0-30.0, default: 7.5 for dev, 0.0 for schnell)
-   --true-cfg FLOAT    True classifier-free guidance scale (1.0-10.0, default: 1.0)
-   --max-seq-len INT   Maximum sequence length (64-2048, default: 512)
-   --cpu-only          Force CPU-only mode (not recommended)
-   ```
-
-2. `loop` - Generate multiple images in a batch
-   ```powershell
-   uv run imagegen loop [OPTIONS]
-   
-   Options:
-   -b, --batch-size INT  Number of images to generate (1-100)
-   -n, --interval INT   Seconds between generations
-   -m, --model TEXT     Ollama model to use (default: phi4:latest)
-   -f, --flux-model TEXT Choose model variant: 'dev' (quality) or 'schnell' (speed)
-   --height INT         Image height in pixels (128-2048, default: 768)
-   --width INT          Image width in pixels (128-2048, default: 1360)
-   -s, --steps INT      Number of inference steps (1-150, default: 50 for dev, 4 for schnell)
-   -g, --guidance FLOAT Guidance scale (1.0-30.0, default: 7.5 for dev, 0.0 for schnell)
-   --true-cfg FLOAT    True classifier-free guidance scale (1.0-10.0, default: 1.0)
-   --max-seq-len INT   Maximum sequence length (64-2048, default: 512)
-   --cpu-only          Force CPU-only mode (not recommended)
-   ```
-
-3. Version Information
-   ```powershell
-   uv run imagegen --version
-   ```
-
-### Plugin System
-
-The application features a modular plugin system that enhances prompt generation with contextual information:
-
-1. Time of Day Plugin
-   - Automatically detects current time
-   - Categorizes into morning/afternoon/evening/night
-   - Influences scene lighting and atmosphere in prompts
-
-2. Holiday Plugin
-   - Tracks upcoming holidays
-   - Provides "holiday facts" about current day
-   - Automatically themes prompts around nearby celebrations
-
-3. Art Style Plugin
-   - Database of 90+ distinct art styles
-   - Ranges from classical to contemporary
-   - Each style includes detailed characteristics
-   - Randomly selects styles to vary artistic approach
-
-Example prompt with plugin enhancements:
-```
-night, Monday, approaching Christmas, in the style of Art Nouveau (organic forms, flowing lines, nature-inspired patterns)
+Options:
+-b, --batch-size INT Number of images (1-100)
+-n, --interval INT  Seconds between generations
+[+ same options as generate command]
 ```
 
-### Creating Custom Plugins
+## 🎭 Model Variants
 
-Plugins can be created by:
-1. Adding a new Python module in `src/plugins/`
-2. Implementing a function that returns contextual information
-3. Registering the plugin in `src/plugins/__init__.py`
+Flux offers two model variants with different licensing terms:
 
-Basic plugin template:
+1. **Dev Model** (`-f dev`)
+   ```bash
+   uv run imagegen generate -f dev --height 1024 --width 1024
+   ```
+   - Non-commercial use only
+   - High-quality output (for when you're feeling fancy 🎩)
+   - 50 inference steps
+   - 7.5 guidance scale
+   - Best for personal projects and experimentation
+
+2. **Schnell Model** (`-f schnell`)
+   ```bash
+   uv run imagegen generate -f schnell --steps 4 --guidance 0.0
+   ```
+   - Commercial-friendly license
+   - Optimized for speed (zoom zoom! 🏃‍♂️)
+   - 4 inference steps
+   - 0.0 guidance scale
+   - Suitable for production environments
+
+Choose the appropriate model based on your use case and licensing requirements.
+
+## ⚙️ Environment Configuration
+
+Set these environment variables before running:
+```bash
+# Default values shown
+export OLLAMA_MODEL=phi4:latest
+export OLLAMA_TEMPERATURE=0.7
+export FLUX_MODEL=dev
+export IMAGE_HEIGHT=768
+export IMAGE_WIDTH=1360
+export NUM_INFERENCE_STEPS=50  # 50 for dev, 4 for schnell
+export GUIDANCE_SCALE=7.5      # 7.5 for dev, 0.0 for schnell
+export TRUE_CFG_SCALE=1.0
+export MAX_SEQUENCE_LENGTH=512
+```
+
+## 🔌 Plugin Development
+
+Got a cool idea for a plugin? We'd love to see it! PRs are very welcome for new plugins that add creative context to our prompts. 
+
+Create new plugins in `src/plugins/`:
 ```python
 def get_my_context() -> str:
-    """
-    Get contextual information for prompt enhancement.
-    
-    Returns:
-        str: Context to be incorporated into the prompt
-    """
-    # Your implementation here
-    return "context string"
+    """Add custom context to prompts."""
+    return "your awesome context here ✨"
 ```
 
-### Interactive Mode Details
+Register in `src/plugins/__init__.py`
 
-Interactive Mode enables you to provide feedback on the generated prompt before finalizing image creation. When using the `--interactive` flag:
-- The system will generate a prompt and then allow you to review and provide feedback.
-- This mode is ideal if you want to refine or adjust the prompt before image processing begins.
-- After confirmation, the image generation proceeds with your input incorporated.
+Some plugin ideas we'd love to see:
+- Music mood integration 🎵
+- Local events awareness 🎪
+- Color palette themes 🎨
+- Cultural celebrations 🌍
+- Astronomy conditions 🌟
 
-### Image Generation Models
-
-The system supports two Flux model variants, each optimized for different use cases:
-
-1. **Dev Model** (`-f dev`): High-quality generation
-   - Default for detailed, high-fidelity images
-   - Uses 50 inference steps
-   - Guidance scale of 7.5 for strong prompt adherence
-   - Best for final, production-quality images
-   - Example: `uv run imagegen generate -f dev --height 1024 --width 1024`
-
-2. **Schnell Model** (`-f schnell`): Fast generation
-   - Optimized for rapid prototyping
-   - Uses only 4 inference steps
-   - Guidance scale of 0.0 for faster processing
-   - Best for testing prompts or quick iterations
-   - Example: `uv run imagegen generate -f schnell --steps 4 --guidance 0.0`
-
-### Environment Variables
-
-You can customize the behavior using these environment variables:
-
-- `OLLAMA_MODEL`: Default Ollama model for prompt generation (default: phi4:latest)
-- `OLLAMA_TEMPERATURE`: Temperature for prompt generation (default: 0.7)
-- `FLUX_MODEL`: Model variant for image generation (default: dev)
-- `IMAGE_HEIGHT`: Output image height in pixels (default: 768)
-- `IMAGE_WIDTH`: Output image width in pixels (default: 1360)
-- `NUM_INFERENCE_STEPS`: Number of denoising steps (default: 50 for dev, 4 for schnell)
-- `GUIDANCE_SCALE`: Guidance scale for image generation (default: 7.5 for dev, 0.0 for schnell)
-- `TRUE_CFG_SCALE`: True classifier-free guidance scale (default: 1.0)
-- `MAX_SEQUENCE_LENGTH`: Maximum sequence length for text processing (default: 512)
-
-For example, to set a custom model in PowerShell:
-```powershell
-$env:OLLAMA_MODEL = "mistral"
-uv run imagegen generate
-```
-
-### Output
-
-Generated images and their corresponding prompt files are organized in weekly directories:
+## 📁 Output Structure
 ```
 output/
 └── [year]/
@@ -208,49 +145,23 @@ output/
         └── image_[timestamp]_[prompt_hash].txt
 ```
 
-## Known Issues
+## 🐛 Known Issues
 
-- CLIP Token Limit: The current implementation uses experimental embeddings to work around CLIP's 77 token limit. This may affect prompt processing for very long descriptions.
-- Plugin Ordering: The order of plugin-provided context in the final prompt is fixed. Future versions may allow customizable ordering.
+- CLIP Token Limit: Using experimental embeddings for >77 tokens
+- Fixed plugin context ordering in prompts (but hey, we're working on it! 🔧)
 
-## Development
+## 📜 License
 
-Format code:
-```powershell
-uv run -m black src/
-uv run -m isort src/
-```
+MIT License - See LICENSE file for details
 
-Run linting:
-```powershell
-uv run -m pylint src/
-```
+Note: The Flux models have their own separate licensing terms. The dev variant is for non-commercial use only, while the schnell variant includes a commercial-friendly license.
 
-Run tests:
-```powershell
-uv run -m pytest
-```
+## 🤝 Contributing
 
-## License
+Contributions are super welcome! Whether it's:
+- New plugins (the more creative, the better!)
+- Bug fixes (squash those bugs! 🐞)
+- Documentation improvements (help others learn!)
+- Feature suggestions (dream big! ✨)
 
-MIT License
-
-Copyright (c) 2024 killerapp
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+Let's make image generation more fun and creative together! 🎨✨

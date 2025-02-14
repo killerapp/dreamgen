@@ -5,13 +5,14 @@ for more contextually aware prompts.
 """
 import json
 import os
+import logging
 from typing import Optional
 import time
 
 from ..utils.error_handler import handle_errors, PromptError
 from ..utils.config import Config
 from ..utils.metrics import GenerationMetrics
-from ..plugins import get_temporal_descriptor
+from ..plugins import get_temporal_descriptor, get_context_with_descriptions
 
 class PromptGenerator:
     def __init__(self, config: Config):
@@ -24,6 +25,7 @@ class PromptGenerator:
             "Magical post office: Elves sort letters on floating belts, mechanical reindeer power machines, fiber-optic antlers glow."
         ]
         self.conversation_history = []
+        self.logger = logging.getLogger(__name__)
         
     @handle_errors(error_type=PromptError, retries=2)
     async def generate_prompt(self) -> str:
@@ -34,21 +36,32 @@ class PromptGenerator:
             metrics = GenerationMetrics(model_name=self.model_name)
             start_time = time.time()
             
-            # Get temporal context
+            # Get context with plugin descriptions
+            context_data = get_context_with_descriptions()
             temporal_context = get_temporal_descriptor()
             
-            # Build system context
+            # Log plugin contributions
+            self.logger.info("Plugin contributions:")
+            for result in context_data["results"]:
+                self.logger.info(f"  {result.name}: {result.value} - {result.description}")
+            
+            # Build system context with plugin information
             system_context = "\n".join([
                 "You are a creative prompt generator for image generation.",
                 "Generate unique and imaginative prompts that would inspire beautiful AI-generated images.",
                 "IMPORTANT: Prompts MUST be concise and fit within 77 tokens (approximately 60 words).",
                 "IMPORTANT: Do not have a preamble or explain the prompt, output ONLY the prompt itself.",
                 "Focus on vivid, impactful descriptions using fewer, carefully chosen words.",
+                "\nAvailable context from plugins:",
+                *[f"- {desc}" for desc in context_data["descriptions"]],
                 f"\nCurrent temporal context: {temporal_context}",
                 "Begin the prompt with this temporal context, then add a concise but vivid scene description.",
                 "Example format: '[temporal/style context]: [concise scene description]'",
-                "Keep the final combined prompt (including context) within the 77 token limit."
+                "Keep the final combined prompt (including context) within the 77 token limit.",
+                "You may choose which context elements to incorporate based on relevance."
             ])
+            
+            self.logger.info(f"Generated temporal context: {temporal_context}")
             
             # Initialize conversation if empty
             if not self.conversation_history:
@@ -64,15 +77,19 @@ class PromptGenerator:
                     ])
                 }]
             
-            # Generate prompt
+            # Generate prompt with logging
+            self.logger.info("Generating prompt with Ollama...")
             response = ollama.chat(
                 model=self.model_name,
                 messages=self.conversation_history,
                 options={"temperature": self.config.model.ollama_temperature}
             )
             
-            # Add new prompt to conversation history
+            # Process and log the generated prompt
             new_prompt = response.message.content.strip()
+            self.logger.info(f"Raw generated prompt: {new_prompt}")
+            
+            # Add new prompt to conversation history
             self.conversation_history.append({
                 "role": "assistant",
                 "content": new_prompt

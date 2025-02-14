@@ -16,3 +16,6 @@ output
 
 # Test artifacts
 test_output.png
+
+# Log files
+logs/**

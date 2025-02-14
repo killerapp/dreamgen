@@ -1,53 +1,100 @@
-from typing import NamedTuple, Optional
+"""
+Plugin system for adding contextual information to prompts.
+"""
+import logging
+from typing import List, Dict, Any
 
+from ..utils.plugin_manager import PluginManager, PluginResult
 from .time_of_day import get_time_of_day
 from .nearest_holiday import get_nearest_holiday
 from .holiday_fact import get_holiday_fact
 from .art_style import get_art_style
 
-class TemporalContext(NamedTuple):
-    """Container for all temporal information and art style."""
-    time_of_day: str
-    holiday: Optional[str]
-    holiday_fact: Optional[str]
-    art_style: str
+# Initialize plugin manager
+plugin_manager = PluginManager()
 
-def get_temporal_context() -> TemporalContext:
+# Register plugins with descriptions
+plugin_manager.register(
+    "time_of_day",
+    "Provides temporal context based on the current time of day",
+    get_time_of_day,
+    order=1
+)
+
+plugin_manager.register(
+    "nearest_holiday",
+    "Adds context about upcoming or current holidays",
+    get_nearest_holiday,
+    order=2
+)
+
+plugin_manager.register(
+    "holiday_fact",
+    "Enriches holiday context with interesting facts",
+    get_holiday_fact,
+    order=3
+)
+
+plugin_manager.register(
+    "art_style",
+    "Suggests an artistic style for the image",
+    get_art_style,
+    order=4
+)
+
+logger = logging.getLogger(__name__)
+
+def get_context_with_descriptions() -> Dict[str, Any]:
     """
-    Retrieves the complete temporal context including time of day,
-    holiday information, and art style.
+    Execute plugins and return their results with descriptions.
     
     Returns:
-        TemporalContext: Named tuple containing all temporal information and art style
+        Dict containing plugin results and their descriptions
     """
-    return TemporalContext(
-        time_of_day=get_time_of_day(),
-        holiday=get_nearest_holiday(),
-        holiday_fact=get_holiday_fact(),
-        art_style=get_art_style()
-    )
+    results = plugin_manager.execute_plugins()
+    
+    # Log the contributions of each plugin
+    for result in results:
+        logger.info(f"Plugin contribution - {result.name}: {result.value} ({result.description})")
+    
+    return {
+        "results": results,
+        "descriptions": plugin_manager.get_plugin_descriptions()
+    }
 
 def get_temporal_descriptor() -> str:
     """
-    Creates a human-readable string combining all temporal information and art style.
+    Creates a human-readable string combining all plugin contributions.
     
     Returns:
-        str: A descriptive string like "night, approaching Christmas (and today is World Photography Day!), 
-             in the style of Impressionism"
+        str: A descriptive string combining all enabled plugin outputs
     """
-    context = get_temporal_context()
-    temporal_parts = [
-        context.time_of_day,
-        context.holiday
-    ]
-    # Filter out None values and join temporal parts with commas
-    temporal_desc = ", ".join(part for part in temporal_parts if part is not None)
+    results = plugin_manager.execute_plugins()
+    
+    # Build the descriptor string
+    parts = []
+    holiday_fact = None
+    art_style = None
+    
+    for result in results:
+        if result.name == "holiday_fact":
+            holiday_fact = result.value
+        elif result.name == "art_style":
+            art_style = result.value
+        else:
+            if result.value:
+                parts.append(str(result.value))
+    
+    # Join the main parts
+    descriptor = ", ".join(filter(None, parts))
     
     # Add holiday fact if available
-    if context.holiday_fact:
-        temporal_desc = f"{temporal_desc} ({context.holiday_fact})"
+    if holiday_fact:
+        descriptor = f"{descriptor} ({holiday_fact})"
     
     # Add art style if available
-    if context.art_style:
-        return f"{temporal_desc}, {context.art_style}"
-    return temporal_desc
+    if art_style:
+        descriptor = f"{descriptor}, {art_style}"
+    
+    logger.info(f"Generated temporal descriptor: {descriptor}")
+    return descriptor

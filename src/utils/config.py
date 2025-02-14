@@ -2,10 +2,10 @@
 Configuration management for the image generation system.
 """
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 import os
 import json
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass, asdict, field
 
 @dataclass
 class ModelConfig:
@@ -25,6 +25,22 @@ class ImageConfig:
     true_cfg_scale: float = 1.0
 
 @dataclass
+class PluginConfig:
+    """Plugin-related configuration."""
+    enabled_plugins: List[str] = field(default_factory=lambda: [
+        "time_of_day",
+        "nearest_holiday",
+        "holiday_fact",
+        "art_style"
+    ])
+    plugin_order: Dict[str, int] = field(default_factory=lambda: {
+        "time_of_day": 1,
+        "nearest_holiday": 2,
+        "holiday_fact": 3,
+        "art_style": 4
+    })
+
+@dataclass
 class SystemConfig:
     """System-related configuration."""
     output_dir: Path = Path("output")
@@ -34,6 +50,7 @@ class SystemConfig:
 
 class Config:
     def __init__(self):
+        self.plugins = PluginConfig()
         self.model = ModelConfig(
             ollama_model=os.getenv('OLLAMA_MODEL', ModelConfig.ollama_model),
             ollama_temperature=float(os.getenv('OLLAMA_TEMPERATURE', ModelConfig.ollama_temperature)),
@@ -82,6 +99,7 @@ class Config:
         return {
             'model': asdict(self.model),
             'image': asdict(self.image),
+            'plugins': asdict(self.plugins),
             'system': {k: str(v) if isinstance(v, Path) else v 
                       for k, v in asdict(self.system).items()}
         }
