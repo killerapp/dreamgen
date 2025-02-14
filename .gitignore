@@ -16,3 +16,7 @@ output
 
 # Test artifacts
 test_output.png
+
+logs
+
+batch_*.json
