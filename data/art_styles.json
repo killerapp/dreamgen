@@ -403,6 +403,122 @@
     {
       "name": "Visionary Art",
       "description": "Art expressing mystical, spiritual, or inner visions often with fantastic imagery"
+    },
+    {
+      "name": "Ukiyo-e Existentialism",
+      "description": "A fusion of traditional Japanese woodblock print style with existential themes and modern philosophical elements"
+    },
+    {
+      "name": "Lovecraftian",
+      "description": "Art inspired by H.P. Lovecraft's cosmic horror, featuring otherworldly creatures and unsettling imagery"
+    },
+    {
+      "name": "Bohemianism",
+      "description": "Artistic style reflecting unconventional lifestyle, often with romantic, free-spirited elements"
+    },
+    {
+      "name": "Escapism",
+      "description": "Art focusing on fantastical or idealized subjects as a means of mental or emotional escape"
+    },
+    {
+      "name": "Ligne Claire",
+      "description": "Clear line style characterized by strong, uniform lines and minimal shading"
+    },
+    {
+      "name": "Brocade",
+      "description": "Richly decorative style featuring elaborate woven patterns and ornamental designs"
+    },
+    {
+      "name": "Amate",
+      "description": "Traditional Mexican art style using bark paper with indigenous painting techniques"
+    },
+    {
+      "name": "Wuhtercuhler",
+      "description": "Contemporary digital art style with a distinctive watercolor-like aesthetic"
+    },
+    {
+      "name": "Store-Brand",
+      "description": "Art mimicking commercial product design with a generic or mass-produced aesthetic"
+    },
+    {
+      "name": "Contemporary",
+      "description": "Current art practices reflecting modern themes and techniques"
+    },
+    {
+      "name": "Costumbrismo",
+      "description": "Artistic depiction of local customs, manners, and everyday scenes"
+    },
+    {
+      "name": "Incoherents",
+      "description": "Art movement emphasizing absurdity and artistic freedom"
+    },
+    {
+      "name": "Existential",
+      "description": "Art exploring themes of existence, meaning, and human condition"
+    },
+    {
+      "name": "Kitsch",
+      "description": "Art characterized by excessive garishness or sentimentality"
+    },
+    {
+      "name": "Silhouette",
+      "description": "Art created using solid shapes or outlines, typically in black against a lighter background"
+    },
+    {
+      "name": "Topographic",
+      "description": "Art incorporating map-like elements and contour lines to represent spatial relationships"
+    },
+    {
+      "name": "Chiaroscuro",
+      "description": "Strong contrasts between light and dark to create dramatic effects"
+    },
+    {
+      "name": "Triptych",
+      "description": "Artwork divided into three sections or panels that are meant to be displayed together"
+    },
+    {
+      "name": "Foreshortening",
+      "description": "Technique of depicting objects shorter than they actually are to create illusion of perspective"
+    },
+    {
+      "name": "Booru",
+      "description": "Internet-based art style influenced by image board aesthetics and anime culture"
+    },
+    {
+      "name": "Frasurbane",
+      "description": "Urban aesthetic combining sophisticated minimalism with nostalgic elements"
+    },
+    {
+      "name": "Sfumato",
+      "description": "Technique of softening outlines and blending colors to create a hazy effect"
+    },
+    {
+      "name": "Neue Sachlichkeit",
+      "description": "New Objectivity movement characterized by realism and social criticism"
+    },
+    {
+      "name": "Tachisme",
+      "description": "Abstract painting style characterized by spontaneous brushwork and color stains"
+    },
+    {
+      "name": "Avant-Garde",
+      "description": "Experimental and innovative art pushing boundaries of conventional forms"
+    },
+    {
+      "name": "Tactile Design",
+      "description": "Design emphasizing physical texture and touch-based interaction"
+    },
+    {
+      "name": "Compound Design",
+      "description": "Design combining multiple styles or elements to create complex compositions"
+    },
+    {
+      "name": "Grunge Revival Design",
+      "description": "Contemporary interpretation of 90s grunge aesthetic with distressed elements"
+    },
+    {
+      "name": "Stuckism",
+      "description": "Movement promoting figurative painting and opposing conceptual art"
     }
   ]
 }
