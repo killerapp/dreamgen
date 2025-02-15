@@ -1,10 +1,10 @@
-# 🤖 Do AIs Dream of Creative Prompts?
+# 🤖 Do LLMs Dream of electric sheep?
 
 A Python application that continuously generates creative images using AI. It uses Ollama for generating creative prompts and Flux for image generation. Let your machine dream up endless artistic possibilities! ✨
 
 Like electric sheep in the dreams of androids, this project explores the boundaries between human and artificial creativity. What does AI imagine when we let it dream? 🌠
 
-![ComfyUI_00196_](https://github.com/user-attachments/assets/c5534dd2-878f-484f-932b-79df132c9481)
+![Do androids dream of electric sheep?](https://host-image.agentic.workers.dev/)
 
 ## 🚀 Quick Start
 
