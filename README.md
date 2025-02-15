@@ -9,10 +9,9 @@ Like electric sheep in the dreams of androids, this project explores the boundar
 ## 🚀 Quick Start
 
 1. Install prerequisites:
-   - Python 3.11 or higher
+   - uv Python manager (install using [astral](https://astral.sh/uv/install))
    - Ollama (from [ollama.ai](https://ollama.ai))
    - CUDA-capable GPU (8GB+ VRAM recommended)
-   - uv package manager (install using [astral](https://astral.sh/uv/install))
 
 2. Set up the project:
    ```bash
@@ -38,7 +37,6 @@ Like electric sheep in the dreams of androids, this project explores the boundar
 - AI-powered prompt generation using Ollama
 - Image generation using Flux transformers
 - Interactive mode for prompt feedback (be the art director!)
-- Weekly organized outputs with prompt history
 - Plugin system for dynamic prompt enhancement:
   - Time of day context (morning/afternoon/evening/night)
   - Holiday detection and theming (because every day is special 🎉)
