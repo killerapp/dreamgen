@@ -94,6 +94,9 @@ class ImageGenerator:
                 device_map="balanced"
             )
             
+            # Move model to device first
+            self.pipe.to(self.device)
+            
             # Load random Lora if selected through plugin system
             plugin_results = plugin_manager.execute_plugins()
             for result in plugin_results:
@@ -102,7 +105,8 @@ class ImageGenerator:
                         lora_path = get_lora_path(result.value, self.config)
                         if lora_path:
                             logger.info(f"Loading Lora: {result.value} from {lora_path}")
-                            self.pipe.load_lora_weights(lora_path)
+                            # Basic Lora loading without extra parameters
+                            self.pipe.load_lora_weights(str(lora_path))
                         else:
                             logger.warning(f"Could not find Lora path for: {result.value}")
                     except Exception as e:

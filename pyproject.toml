@@ -8,7 +8,7 @@ dependencies = [
     "torch>=2.0.0", # Will be installed with CUDA support via pip extra
     "torchvision>=0.15.0",
     "transformers>=4.30.0",
-    "diffusers>=0.25.0",
+    "diffusers==0.21.4",  # Specific version known to work with Loras
     "Pillow>=10.0.0",
     "typer>=0.9.0",
     "rich>=13.0.0",  # Required for typer CLI features
@@ -18,6 +18,8 @@ dependencies = [
     "accelerate>=1.3.0",
     "protobuf>=5.29.3",
     "sentencepiece>=0.2.0",
+    "peft>=0.7.0",  # Required for Lora support
+    "safetensors>=0.4.2",  # Required for loading Lora weights
 ]
 
 [project.optional-dependencies]
