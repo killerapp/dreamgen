@@ -22,7 +22,7 @@ class PromptGenerator:
         self.example_prompts = [
             "Cozy cafe: Steam from coffee cups, readers in corners, frost patterns on windows cast golden morning light, prismatic reflections dance.",
             "Futuristic market: Holographic stalls mix with traditional ones, sci-fi foods under crystal dome, rainbow light filters through.",
-            "Magical post office: Elves sort letters on floating belts, mechanical reindeer power machines, fiber-optic antlers glow."
+            "Magical post office with '<lora_name>' as the postmaster: Sorting letters on floating belts, mechanical reindeer power machines, fiber-optic antlers glow."
         ]
         self.conversation_history = []
         self.logger = logging.getLogger(__name__)
@@ -45,6 +45,13 @@ class PromptGenerator:
             for result in context_data["results"]:
                 self.logger.info(f"  {result.name}: {result.value} - {result.description}")
             
+            # Extract Lora keyword if present
+            lora_keyword = None
+            for result in context_data["results"]:
+                if result.name == "lora" and result.value:
+                    lora_keyword = result.value
+                    break
+            
             # Build system context with plugin information
             system_context = "\n".join([
                 "You are a creative prompt generator for image generation.",
@@ -56,10 +63,17 @@ class PromptGenerator:
                 *[f"- {desc}" for desc in context_data["descriptions"]],
                 f"\nCurrent temporal context: {temporal_context}",
                 "Begin the prompt with this temporal context, then add a concise but vivid scene description.",
-                "Example format: '[temporal/style context]: [concise scene description]'",
+                "Example format: '[temporal/style context]: [scene with Lora as subject]'",
                 "Keep the final combined prompt (including context) within the 77 token limit.",
-                "You may choose which context elements to incorporate based on relevance."
+                "You may choose which context elements to incorporate based on relevance.",
+                "\nIMPORTANT: If a Lora keyword is provided, you MUST make it a central subject or character in the scene.",
+                "The Lora keyword should be in single quotes and be an active participant in the scene.",
+                "For example: 'scene with '<keyword>' as the main character doing something'"
             ])
+            
+            if lora_keyword:
+                system_context += f"\nCurrent Lora keyword that MUST be used as a subject in single quotes: '{lora_keyword}'"
+                system_context += "\nMake sure the Lora keyword is a central character or subject in the scene, not just mentioned."
             
             self.logger.info(f"Generated temporal context: {temporal_context}")
             
@@ -73,7 +87,8 @@ class PromptGenerator:
                     "content": "\n".join([
                         "Here are some example prompts:",
                         *[f"Example {i+1}: {prompt}" for i, prompt in enumerate(self.example_prompts)],
-                        "\nGenerate a new prompt that is different from these examples but equally creative."
+                        "\nGenerate a new prompt that is different from these examples but equally creative.",
+                        "If a Lora keyword is provided, make it the central subject or character in the scene."
                     ])
                 }]
             
@@ -96,7 +111,7 @@ class PromptGenerator:
             })
             self.conversation_history.append({
                 "role": "user",
-                "content": "Generate another unique prompt, different from previous ones."
+                "content": "Generate another unique prompt, different from previous ones. Remember to make any Lora keyword the central subject in the scene."
             })
             
             # Update metrics

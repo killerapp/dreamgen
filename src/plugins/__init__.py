@@ -9,38 +9,63 @@ from .time_of_day import get_time_of_day
 from .nearest_holiday import get_nearest_holiday
 from .holiday_fact import get_holiday_fact
 from .art_style import get_art_style
+from .lora import apply_lora
+from ..utils.config import Config
 
 # Initialize plugin manager
 plugin_manager = PluginManager()
 
-# Register plugins with descriptions
-plugin_manager.register(
-    "time_of_day",
-    "Provides temporal context based on the current time of day",
-    get_time_of_day,
-    order=1
-)
+# Initialize plugins dict to store plugin functions
+plugin_functions = {}
 
-plugin_manager.register(
-    "nearest_holiday",
-    "Adds context about upcoming or current holidays",
-    get_nearest_holiday,
-    order=2
-)
+def register_base_plugins():
+    """Register the base plugins that don't require additional configuration."""
+    plugin_manager.register(
+        "time_of_day",
+        "Provides temporal context based on the current time of day",
+        get_time_of_day,
+        order=1
+    )
 
-plugin_manager.register(
-    "holiday_fact",
-    "Enriches holiday context with interesting facts",
-    get_holiday_fact,
-    order=3
-)
+    plugin_manager.register(
+        "nearest_holiday",
+        "Adds context about upcoming or current holidays",
+        get_nearest_holiday,
+        order=2
+    )
 
-plugin_manager.register(
-    "art_style",
-    "Suggests an artistic style for the image",
-    get_art_style,
-    order=4
-)
+    plugin_manager.register(
+        "holiday_fact",
+        "Enriches holiday context with interesting facts",
+        get_holiday_fact,
+        order=3
+    )
+
+    plugin_manager.register(
+        "art_style",
+        "Suggests an artistic style for the image",
+        get_art_style,
+        order=4
+    )
+
+def register_lora_plugin(config: Config):
+    """Register the Lora plugin with the given config."""
+    def lora_plugin():
+        return apply_lora(config)
+    
+    # Store the plugin function
+    plugin_functions['lora'] = lora_plugin
+    
+    # Register or re-register the plugin
+    plugin_manager.register(
+        "lora",
+        "Randomly selects and applies a Lora model",
+        lora_plugin,
+        order=5
+    )
+
+# Register base plugins immediately
+register_base_plugins()
 
 logger = logging.getLogger(__name__)
 

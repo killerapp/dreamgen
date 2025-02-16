@@ -14,12 +14,15 @@ from ..utils.error_handler import handle_errors, ModelError, ResourceError
 from ..utils.memory_manager import MemoryManager
 from ..utils.config import Config
 from ..utils.metrics import GenerationMetrics
+from ..plugins import register_lora_plugin, plugin_manager
+from ..plugins.lora import get_lora_path
 
 # Configure logging to suppress verbose output
 logging.getLogger("transformers").setLevel(logging.WARNING)
 logging.getLogger("diffusers").setLevel(logging.WARNING)
 logging.getLogger("accelerate").setLevel(logging.WARNING)
 
+logger = logging.getLogger(__name__)
 
 class ImageGenerator:
     def __init__(self, config: Config):
@@ -37,6 +40,10 @@ class ImageGenerator:
         """
         self.config = config
         self.model_name = config.model.flux_model
+        
+        # Register Lora plugin with config
+        register_lora_plugin(config)
+        
         self.height = config.image.height
         self.width = config.image.width
         self.num_inference_steps = config.image.num_inference_steps
@@ -86,6 +93,20 @@ class ImageGenerator:
                 low_cpu_mem_usage=True,
                 device_map="balanced"
             )
+            
+            # Load random Lora if selected through plugin system
+            plugin_results = plugin_manager.execute_plugins()
+            for result in plugin_results:
+                if result.name == "lora" and result.value:
+                    try:
+                        lora_path = get_lora_path(result.value, self.config)
+                        if lora_path:
+                            logger.info(f"Loading Lora: {result.value} from {lora_path}")
+                            self.pipe.load_lora_weights(lora_path)
+                        else:
+                            logger.warning(f"Could not find Lora path for: {result.value}")
+                    except Exception as e:
+                        logger.error(f"Error loading Lora: {str(e)}")
             
             if self.device == "cuda":
                 self._setup_gpu_optimizations()

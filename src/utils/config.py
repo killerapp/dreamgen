@@ -8,12 +8,21 @@ import json
 from dataclasses import dataclass, asdict, field
 
 @dataclass
+class LoraConfig:
+    """Lora-specific configuration."""
+    lora_dir: Path = Path("C:/ComfyUI/ComfyUI/models/loras")
+    enabled_loras: List[str] = field(default_factory=list)
+    # Probability of applying any Lora (0.0 to 1.0)
+    application_probability: float = 0.7
+
+@dataclass
 class ModelConfig:
     """Model-specific configuration."""
     ollama_model: str = "phi4:latest"
     ollama_temperature: float = 0.7
     flux_model: str = "dev"
     max_sequence_length: int = 512
+    lora: LoraConfig = field(default_factory=LoraConfig)
 
 @dataclass
 class ImageConfig:
@@ -31,13 +40,15 @@ class PluginConfig:
         "time_of_day",
         "nearest_holiday",
         "holiday_fact",
-        "art_style"
+        "art_style",
+        "lora"
     ])
     plugin_order: Dict[str, int] = field(default_factory=lambda: {
         "time_of_day": 1,
         "nearest_holiday": 2,
         "holiday_fact": 3,
-        "art_style": 4
+        "art_style": 4,
+        "lora": 5
     })
 
 @dataclass
@@ -52,6 +63,11 @@ class Config:
     def __init__(self):
         self.plugins = PluginConfig()
         self.model = ModelConfig(
+            lora=LoraConfig(
+                lora_dir=Path(os.getenv('LORA_DIR', LoraConfig.lora_dir)),
+                enabled_loras=os.getenv('ENABLED_LORAS', '').split(',') if os.getenv('ENABLED_LORAS') else [],
+                application_probability=float(os.getenv('LORA_APPLICATION_PROBABILITY', LoraConfig.application_probability))
+            ),
             ollama_model=os.getenv('OLLAMA_MODEL', ModelConfig.ollama_model),
             ollama_temperature=float(os.getenv('OLLAMA_TEMPERATURE', ModelConfig.ollama_temperature)),
             flux_model=os.getenv('FLUX_MODEL', ModelConfig.flux_model),

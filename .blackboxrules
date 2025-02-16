@@ -1,0 +1,24 @@
+<instruction>
+Before formulating a PLAN - Use the 'dotcontext' mcp tool to understand the project before getting started on any task. pass the projectRoot + .context  as an absolute path to the tool. You can and SHOULD run 'context' in PLAN mode to begin the PLAN, it is non-destructive, read only.
+</instruction>
+<instruction>
+Always use 'uv' prefix / drop-in for pip. 
+sync: uv sync  - this will create venv and install all packages
+init:  uv init .   
+pip:  uv pip  - a drop-in replacement for pip
+run: uv run - will execute the current python
+python: uv python - will ONLY help manage python versions - use 'run' for executing python code
+use the --help command to learn more
+</instruction>
+<instruction>
+Never downgrade or upgrade a dependency unless the user approves it.
+</instruction>
+<instruction>
+Dev env is on Windows (and thus, PowerShell), no bash commands. Use ';' not '&&' to concatenate multiple commands.
+</instruction>
+<instruction>
+The 'dist' directory should be viewed by a Get-Items search as the main file tool won't show any files in it.
+</instruction>
+<instruction>
+Do not try to read *.lock  files only modify the corresponding file and use tools to sync or lock.
+</instruction>
