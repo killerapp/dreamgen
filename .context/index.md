@@ -176,6 +176,3 @@ The prompt generator integrates plugins through these steps:
    - Generates prompt incorporating all plugin contexts
    - Maintains coherence while respecting token limits
 
-## Development Guide
-
-[Rest of the development guide remains unchanged...]
