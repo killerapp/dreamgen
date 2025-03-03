@@ -119,7 +119,17 @@ class SystemDiagnostics:
         
         for var in relevant_vars:
             value = os.environ.get(var)
-            result["variables"][var] = value if value else "Not set"
+            
+            # Mask sensitive tokens
+            if var == "HF_TOKEN" and value:
+                # Show first 4 and last 4 characters, mask the rest
+                if len(value) > 8:
+                    masked_value = value[:4] + "*" * (len(value) - 8) + value[-4:]
+                else:
+                    masked_value = "****" + value[-4:] if len(value) > 4 else "****"
+                result["variables"][var] = masked_value
+            else:
+                result["variables"][var] = value if value else "Not set"
             
             # Check for specific issues
             if var in ["CUDA_HOME", "CUDA_PATH"] and not value and torch.cuda.is_available():
