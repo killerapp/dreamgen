@@ -145,7 +145,7 @@ uv run imagegen generate -f schnell --mps-use-fp16
 
 The system supports Lora models for custom fine-tuning. Loras are loaded from subdirectories in your Lora directory, with automatic version selection.
 
-Loras can be used to add specific likenesses (people, characters) or artistic styles to your generated images. You can train your own Loras or download pre-trained ones from various libraries.
+Loras can be used to add specific likenesses (people, characters) or artistic styles to your generated images. The plugin system **automatically integrates Loras into your prompts** when they are enabled, making it seamless to add your favorite characters or styles to generated images.
 
 ### Lora Sources
 - [Fal.ai](https://fal.ai/) - Offers high-quality Loras for various styles and subjects
@@ -170,17 +170,27 @@ loras/
 ```
 
 ### Using Loras
-1. **Automatic Mode**: Let the system generate prompts with your Lora
-   ```bash
-   uv run imagegen generate
-   ```
 
-2. **Manual Mode**: Force a prompt with your Lora as the subject
-   ```bash
-   uv run imagegen generate -p "Evening scene with 'your_lora_name' as the main character walking through a cyberpunk city"
-   ```
+#### Automatic Integration (Recommended)
+The system will automatically:
+1. Randomly select from your enabled Loras based on the configured probability
+2. Integrate the selected Lora as a central character/subject in the generated prompt
+3. Format the Lora keyword properly with single quotes (e.g., 'your_lora_name')
 
-Note: When using Loras, always make the Lora keyword a central subject in your prompt using single quotes, e.g., 'your_lora_name'.
+Simply run:
+```bash
+uv run imagegen generate
+# or
+uv run imagegen loop --batch-size 10
+```
+
+#### Manual Prompt with Lora
+If you prefer to craft your own prompt with a specific Lora:
+```bash
+uv run imagegen generate -p "Evening scene with 'your_lora_name' as the main character walking through a cyberpunk city"
+```
+
+> **How it works**: The Lora plugin detects enabled Loras, selects one based on your configuration, and instructs the prompt generator to make the Lora a central subject in the scene. This happens automatically in continuous generation mode.
 
 ## 🌐 Host-Image Feature
 
