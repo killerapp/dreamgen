@@ -58,6 +58,7 @@ class SystemConfig:
     log_dir: Path = Path("logs")
     cache_dir: Path = Path(".cache")
     cpu_only: bool = False
+    mps_use_fp16: bool = False
 
 class Config:
     def __init__(self):
@@ -86,7 +87,8 @@ class Config:
             output_dir=Path(os.getenv('OUTPUT_DIR', SystemConfig.output_dir)),
             log_dir=Path(os.getenv('LOG_DIR', SystemConfig.log_dir)),
             cache_dir=Path(os.getenv('CACHE_DIR', SystemConfig.cache_dir)),
-            cpu_only=bool(os.getenv('CPU_ONLY', SystemConfig.cpu_only))
+            cpu_only=bool(os.getenv('CPU_ONLY', SystemConfig.cpu_only)),
+            mps_use_fp16=bool(os.getenv('MPS_USE_FP16', SystemConfig.mps_use_fp16))
         )
         
     @classmethod

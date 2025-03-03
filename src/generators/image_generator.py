@@ -2,13 +2,14 @@
 Image generator using Flux 1.1 transformers model.
 """
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Literal
 import os
 import time
 import logging
 import torch
 from diffusers import DiffusionPipeline
 from PIL import Image
+import platform
 
 from ..utils.error_handler import handle_errors, ModelError, ResourceError
 from ..utils.memory_manager import MemoryManager
@@ -52,22 +53,39 @@ class ImageGenerator:
         self.max_sequence_length = config.model.max_sequence_length
         self.pipe = None
         
-        if not config.system.cpu_only and not torch.cuda.is_available():
-            raise ResourceError(
-                "GPU (CUDA) is not available. "
-                "This model requires a GPU for efficient processing. "
-                "If you want to run on CPU anyway, use --cpu-only flag"
-            )
-            
-        self.device = "cpu" if config.system.cpu_only else "cuda"
+        # Determine available device
+        self.device = self._determine_device(config.system.cpu_only)
         self.memory_manager = MemoryManager(self.device)
         
         if self.device == "cuda":
-            print(f"Using GPU: {torch.cuda.get_device_name()}")
+            print(f"Using NVIDIA GPU: {torch.cuda.get_device_name()}")
             torch.cuda.set_device(0)
+            self.memory_manager.optimize_memory_usage()
+        elif self.device == "mps":
+            print(f"Using Apple Silicon GPU: {platform.processor()}")
             self.memory_manager.optimize_memory_usage()
         else:
             print("WARNING: Running on CPU. This will be significantly slower.")
+    
+    def _determine_device(self, cpu_only: bool) -> Literal["cpu", "cuda", "mps"]:
+        """Determine the appropriate device to use based on availability."""
+        if cpu_only:
+            return "cpu"
+            
+        # Check for CUDA (NVIDIA GPUs)
+        if torch.cuda.is_available():
+            return "cuda"
+            
+        # Check for MPS (Apple Silicon)
+        if hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
+            return "mps"
+            
+        # If we got here and cpu_only is False, warn the user
+        if not cpu_only:
+            print("No GPU acceleration available (neither CUDA nor MPS). "
+                  "Consider using --cpu-only flag for better error handling.")
+            
+        return "cpu"
         
     def initialize(self, force_reinit: bool = False):
         """Initialize the Flux diffusion pipeline."""
@@ -86,12 +104,25 @@ class ImageGenerator:
             # Set memory management environment variables
             os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "max_split_size_mb:512"
             
+            # Determine appropriate torch dtype based on device
+            if self.device == "cuda":
+                torch_dtype = torch.float16
+            elif self.device == "mps":
+                # MPS works better with float32 for most models, but can use float16 for some
+                torch_dtype = torch.float16 if self.config.system.mps_use_fp16 else torch.float32
+            else:
+                torch_dtype = torch.float32
+                
+            # Get HF token if available
+            hf_token = os.environ.get("HF_TOKEN")
+            
             # Load model with memory optimizations
             self.pipe = DiffusionPipeline.from_pretrained(
                 self.model_name,
-                torch_dtype=torch.float16 if self.device == "cuda" else torch.float32,
+                torch_dtype=torch_dtype,
                 low_cpu_mem_usage=True,
-                device_map="balanced"
+                device_map="balanced" if self.device == "cuda" else None,
+                use_auth_token=hf_token if hf_token and hf_token != "your_hugging_face_token_here" else None
             )
             
             # Move model to device first
@@ -112,25 +143,32 @@ class ImageGenerator:
                     except Exception as e:
                         logger.error(f"Error loading Lora: {str(e)}")
             
-            if self.device == "cuda":
+            # Set up device-specific optimizations
+            if self.device in ["cuda", "mps"]:
                 self._setup_gpu_optimizations()
     
     def _setup_gpu_optimizations(self):
         """Set up GPU-specific optimizations for the pipeline."""
+        # Attention slicing works on both CUDA and MPS
         self.pipe.enable_attention_slicing()
         print("Enabled attention slicing")
         
+        # VAE tiling works on both CUDA and MPS
         self.pipe.enable_vae_tiling()
         print("Enabled VAE tiling")
         
-        try:
-            self.pipe.enable_xformers_memory_efficient_attention()
-            print("Enabled xformers memory efficient attention")
-        except Exception:
-            print("Xformers optimization not available")
-            
+        # xformers is CUDA-specific
+        if self.device == "cuda":
+            try:
+                self.pipe.enable_xformers_memory_efficient_attention()
+                print("Enabled xformers memory efficient attention")
+            except Exception:
+                print("Xformers optimization not available")
+        
+        # Print memory info if available
         allocated, reserved, total = self.memory_manager.get_gpu_memory_info()
-        print(f"GPU Memory: {allocated:.2f} GB allocated, {reserved:.2f} GB reserved (Total: {total:.2f} GB)")
+        if total > 0:
+            print(f"GPU Memory: {allocated:.2f} GB allocated, {reserved:.2f} GB reserved (Total: {total:.2f} GB)")
 
     @handle_errors(error_type=ModelError, retries=1, cleanup_func=lambda: self.memory_manager.optimize_memory_usage())
     async def generate_image(self, prompt: str, output_path: Path, force_reinit: bool = False) -> Tuple[Path, float, str]:
@@ -146,7 +184,7 @@ class ImageGenerator:
             self.initialize(force_reinit)
             
             # Generate image
-            with torch.inference_mode(), torch.amp.autocast("cuda", enabled=self.device=="cuda"):
+            with torch.inference_mode(), torch.amp.autocast(self.device, enabled=self.device in ["cuda", "mps"]):
                 image = self.pipe(
                     prompt=prompt,
                     prompt_2=prompt,
@@ -166,6 +204,7 @@ class ImageGenerator:
             metrics.generation_time = time.time() - start_time
             if self.device == "cuda":
                 metrics.gpu_memory_peak = torch.cuda.max_memory_allocated() / 1024**3
+            # MPS doesn't have a direct memory tracking API like CUDA
             
             return output_path, metrics.generation_time, self.model_name.split('/')[-1]
             

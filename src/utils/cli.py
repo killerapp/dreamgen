@@ -86,6 +86,10 @@ def generate(
     prompt: Optional[str] = typer.Option(
         None, "--prompt", "-p", 
         help="Provide a custom prompt for direct inference"
+    ),
+    mps_use_fp16: bool = typer.Option(
+        False, "--mps-use-fp16",
+        help="Use float16 precision on Apple Silicon (may improve performance)"
     )
 ) -> None:
     """Generate a single image using AI-generated prompts or a custom prompt."""
@@ -99,6 +103,9 @@ def generate(
                 transient=True  # Hide finished tasks
             ) as progress:
                 try:
+                    # Update config with CLI options
+                    app.state.config.system.mps_use_fp16 = mps_use_fp16
+                    
                     # Initialize components
                     init_task = progress.add_task("[cyan]Initializing components...", total=None)
                     prompt_gen = PromptGenerator(app.state.config)
@@ -188,6 +195,10 @@ def loop(
         None, "--interval", "-n", 
         help="Interval in seconds between generations",
         min=0
+    ),
+    mps_use_fp16: bool = typer.Option(
+        False, "--mps-use-fp16",
+        help="Use float16 precision on Apple Silicon (may improve performance)"
     )
 ) -> None:
     """Generate a batch of images with unique prompts."""
@@ -204,6 +215,9 @@ def loop(
                 transient=True  # Hide finished tasks
             ) as progress:
                 try:
+                    # Update config with CLI options
+                    app.state.config.system.mps_use_fp16 = mps_use_fp16
+                    
                     # Initialize components
                     init_task = progress.add_task("[cyan]Initializing models...", total=None)
                     prompt_gen = PromptGenerator(app.state.config)

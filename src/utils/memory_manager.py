@@ -4,26 +4,43 @@ Memory management utilities for GPU operations.
 import os
 import gc
 import time
-from typing import Optional
+import platform
+from typing import Optional, Literal
 import psutil
 import torch
 
 class MemoryManager:
-    def __init__(self, device: str = "cuda"):
+    def __init__(self, device: Literal["cpu", "cuda", "mps"] = "cuda"):
         self.device = device
         self.warning_threshold = 0.8  # 80% memory usage warning
         self.critical_threshold = 0.9  # 90% memory usage critical
+        self.is_apple_silicon = platform.processor() == 'arm' and platform.system() == 'Darwin'
         
     def get_gpu_memory_info(self) -> tuple[float, float, float]:
         """Get current GPU memory usage information."""
-        if self.device != "cuda" or not torch.cuda.is_available():
-            return 0.0, 0.0, 0.0
+        # For CUDA devices
+        if self.device == "cuda" and torch.cuda.is_available():
+            allocated = torch.cuda.memory_allocated() / 1024**3
+            reserved = torch.cuda.memory_reserved() / 1024**3
+            total = torch.cuda.get_device_properties(0).total_memory / 1024**3
+            return allocated, reserved, total
             
-        allocated = torch.cuda.memory_allocated() / 1024**3
-        reserved = torch.cuda.memory_reserved() / 1024**3
-        total = torch.cuda.get_device_properties(0).total_memory / 1024**3
-        
-        return allocated, reserved, total
+        # For MPS devices (Apple Silicon)
+        # MPS doesn't have built-in memory tracking like CUDA
+        # We'll use system memory as a proxy for unified memory architecture
+        if self.device == "mps" and hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
+            # On Apple Silicon, GPU memory is shared with system memory
+            # We'll use a portion of system memory as an estimate
+            vm = psutil.virtual_memory()
+            # Estimate GPU memory usage based on process memory
+            process = psutil.Process(os.getpid())
+            process_memory = process.memory_info().rss / 1024**3
+            
+            # For Apple Silicon, we'll use system memory as a proxy
+            # This is an approximation since MPS doesn't expose detailed memory stats
+            return process_memory, process_memory, vm.total / 1024**3
+            
+        return 0.0, 0.0, 0.0
         
     def get_system_memory_info(self) -> tuple[float, float]:
         """Get system memory usage information."""
@@ -37,14 +54,15 @@ class MemoryManager:
         Returns:
             tuple[bool, str]: (is_critical, status_message)
         """
-        if self.device == "cuda":
+        if self.device in ["cuda", "mps"]:
             allocated, reserved, total = self.get_gpu_memory_info()
-            gpu_usage = allocated / total
-            
-            if gpu_usage > self.critical_threshold:
-                return True, f"Critical GPU memory pressure: {gpu_usage:.1%} used"
-            elif gpu_usage > self.warning_threshold:
-                return False, f"High GPU memory pressure: {gpu_usage:.1%} used"
+            if total > 0:  # Ensure we have valid GPU memory info
+                gpu_usage = allocated / total
+                
+                if gpu_usage > self.critical_threshold:
+                    return True, f"Critical GPU memory pressure: {gpu_usage:.1%} used"
+                elif gpu_usage > self.warning_threshold:
+                    return False, f"High GPU memory pressure: {gpu_usage:.1%} used"
                 
         sys_used, sys_total = self.get_system_memory_info()
         sys_usage = sys_used / sys_total
@@ -62,6 +80,10 @@ class MemoryManager:
             # Clear CUDA cache
             torch.cuda.empty_cache()
             torch.cuda.reset_peak_memory_stats()
+        elif self.device == "mps" and hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
+            # MPS doesn't have explicit cache clearing functions like CUDA
+            # But we can still help with general memory management
+            pass
             
         # Run garbage collection
         gc.collect()

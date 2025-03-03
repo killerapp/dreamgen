@@ -11,7 +11,7 @@ Like electric sheep in the dreams of androids, this project explores the boundar
 1. Install prerequisites:
    - uv Python manager (install using [astral](https://astral.sh/uv/install))
    - Ollama (from [ollama.ai](https://ollama.ai))
-   - CUDA-capable GPU (8GB+ VRAM recommended)
+   - CUDA-capable GPU (8GB+ VRAM recommended) or Apple Silicon Mac (M1/M2/M3/M4)
 
 2. Set up the project:
    ```bash
@@ -65,6 +65,7 @@ Options:
 -g, --guidance FLOAT Guidance scale (1.0-30.0)
 --true-cfg FLOAT    True CFG scale (1.0-10.0)
 --cpu-only          Force CPU mode (slower but hey, it works! 🐌)
+--mps-use-fp16      Use float16 precision on Apple Silicon (may improve performance for some models)
 ```
 
 ### Generate Multiple Images
@@ -102,6 +103,26 @@ Flux offers two model variants with different licensing terms:
    - Suitable for production environments
 
 Choose the appropriate model based on your use case and licensing requirements.
+
+## 🍎 Apple Silicon Support
+
+This project now supports Apple Silicon (M1/M2/M3/M4) Macs using PyTorch's Metal Performance Shaders (MPS) backend. The system will automatically detect Apple Silicon and use the appropriate GPU acceleration.
+
+### Apple Silicon Tips
+
+- Performance is generally good on Apple Silicon, but may vary depending on model complexity
+- By default, the system uses float32 precision on MPS for better compatibility
+- You can enable float16 precision with the `--mps-use-fp16` flag for potentially better performance
+- Memory management on Apple Silicon is handled automatically through the unified memory architecture
+- For best results on Apple Silicon, consider using the Schnell model variant which is optimized for speed
+
+```bash
+# Example: Running on Apple Silicon with float16 precision
+uv run imagegen generate --mps-use-fp16
+
+# Example: Running the faster Schnell model on Apple Silicon
+uv run imagegen generate -f schnell --mps-use-fp16
+```
 
 ## 🎨 Lora Support
 
