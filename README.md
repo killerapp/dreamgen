@@ -12,12 +12,19 @@ Like electric sheep in the dreams of androids, this project explores the boundar
    - uv Python manager (install using [astral](https://astral.sh/uv/install))
    - Ollama (from [ollama.ai](https://ollama.ai))
    - CUDA-capable GPU (8GB+ VRAM recommended) or Apple Silicon Mac (M1/M2/M3/M4)
+   - Hugging Face account with access token (for downloading models)
 
 2. Set up the project:
    ```bash
    git clone https://github.com/killerapp/continuous-image-gen
    cd continuous-image-gen
-   uv sync  # Install dependencies
+   
+   # Set your Hugging Face token (required to download models)
+   # You must ungate the dev or schnell models on Hugging Face first
+   export HUGGINGFACE_TOKEN=your_token_here
+   
+   # Install dependencies
+   uv sync
    ```
 
 3. Let the magic happen! ✨
@@ -78,6 +85,16 @@ Options:
 [+ same options as generate command]
 ```
 
+### Run System Diagnostics
+```bash
+uv run imagegen diagnose [OPTIONS]
+
+Options:
+-v, --verbose        Show detailed diagnostic information
+--check-env/--no-check-env  Check environment variables (default: True)
+--fix                Attempt to fix common issues automatically
+```
+
 ## 🎭 Model Variants
 
 Flux offers two model variants with different licensing terms:
@@ -127,6 +144,14 @@ uv run imagegen generate -f schnell --mps-use-fp16
 ## 🎨 Lora Support
 
 The system supports Lora models for custom fine-tuning. Loras are loaded from subdirectories in your Lora directory, with automatic version selection.
+
+Loras can be used to add specific likenesses (people, characters) or artistic styles to your generated images. You can train your own Loras or download pre-trained ones from various libraries.
+
+### Lora Sources
+- [Fal.ai](https://fal.ai/) - Offers high-quality Loras for various styles and subjects
+- [CivitAI](https://civitai.com/) - Large community library of Loras for characters and styles
+- [Hugging Face](https://huggingface.co/) - Many open-source Loras with various licenses
+- [ComfyUI Manager](https://github.com/ltdrdata/ComfyUI-Manager) - Easy integration with ComfyUI
 
 ### Configuration
 ```bash
@@ -191,9 +216,10 @@ Perfect for embedding in websites, sharing on social media, or creating an alway
 Set these environment variables before running:
 ```bash
 # Default values shown
+export HUGGINGFACE_TOKEN=your_token_here  # Required for downloading models
 export OLLAMA_MODEL=phi4:latest
 export OLLAMA_TEMPERATURE=0.7
-export FLUX_MODEL=dev
+export FLUX_MODEL=dev  # Must ungate this model on Hugging Face first
 export IMAGE_HEIGHT=768
 export IMAGE_WIDTH=1360
 export NUM_INFERENCE_STEPS=50  # 50 for dev, 4 for schnell
