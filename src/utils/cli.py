@@ -18,12 +18,14 @@ from rich.progress import (
     MofNCompleteColumn
 )
 from rich.panel import Panel
+from rich.table import Table
 
 from ..generators.prompt_generator import PromptGenerator
 from ..generators.image_generator import ImageGenerator
 from .storage import StorageManager
 from .config import Config
 from .metrics import MetricsCollector
+from .troubleshoot import SystemDiagnostics
 
 # Initialize rich console for better output
 console = Console()
@@ -182,6 +184,55 @@ def generate(
         raise typer.Exit(0)
     except Exception as e:
         typer.echo(f"Error: {str(e)}", err=True)
+        raise typer.Exit(1)
+        
+@app.command(help="Run system diagnostics and troubleshooting")
+def diagnose(
+    verbose: bool = typer.Option(
+        False, "--verbose", "-v", 
+        help="Show detailed diagnostic information"
+    ),
+    check_env: bool = typer.Option(
+        True, "--check-env/--no-check-env",
+        help="Check environment variables"
+    ),
+    fix: bool = typer.Option(
+        False, "--fix",
+        help="Attempt to fix common issues automatically"
+    )
+) -> None:
+    """Run diagnostics to troubleshoot system compatibility and configuration issues."""
+    console = Console()
+    
+    try:
+        # Initialize diagnostics with config if available
+        diagnostics = SystemDiagnostics(app.state.config)
+        
+        # Run and print diagnostics
+        diagnostics.print_diagnostics(verbose=verbose, check_env=check_env)
+        
+        # If fix flag is set, attempt to fix common issues
+        if fix:
+            console.print("\n[bold cyan]Attempting to fix common issues...[/bold cyan]")
+            diag_results = diagnostics.run_diagnostics()
+            fixed = diagnostics.fix_common_issues(diag_results)
+            
+            if fixed:
+                console.print("\n[bold green]Fixed Issues:[/bold green]")
+                for i, fix_msg in enumerate(fixed, 1):
+                    console.print(f"{i}. {fix_msg}")
+            else:
+                console.print("\n[yellow]No automatic fixes were applied.[/yellow]")
+                
+            # Suggest manual fixes
+            suggested_fixes = diagnostics.suggest_fixes(diag_results)
+            if suggested_fixes:
+                console.print("\n[bold yellow]Suggested Manual Fixes:[/bold yellow]")
+                for i, fix_msg in enumerate(suggested_fixes, 1):
+                    console.print(f"{i}. {fix_msg}")
+    
+    except Exception as e:
+        console.print(f"[red]Error running diagnostics: {str(e)}[/red]")
         raise typer.Exit(1)
 
 @app.command(help="Generate multiple images in a batch with configurable settings")
