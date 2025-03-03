@@ -53,7 +53,6 @@ Like electric sheep in the dreams of androids, this project explores the boundar
 ## ✨ Features
 
 - **Powerful Plugin System** for dynamic prompt enhancement:
-  - Connects to both local and remote data sources
   - Time of day context (morning/afternoon/evening/night)
   - Holiday detection and theming (because every day is special 🎉)
   - Art style variation (90+ distinct styles)
