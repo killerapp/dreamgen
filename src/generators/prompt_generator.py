@@ -19,9 +19,13 @@ class PromptGenerator:
         """Initialize prompt generator with configuration."""
         self.config = config
         self.model_name = config.model.ollama_model
-        self.example_prompts = [
+        # Regular example prompts (no Lora)
+        self.regular_example_prompts = [
             "Cozy cafe: Steam from coffee cups, readers in corners, frost patterns on windows cast golden morning light, prismatic reflections dance.",
             "Futuristic market: Holographic stalls mix with traditional ones, sci-fi foods under crystal dome, rainbow light filters through.",
+        ]
+        # Lora-specific example prompts
+        self.lora_example_prompts = [
             "Magical post office with '<lora_name>' as the postmaster: Sorting letters on floating belts, mechanical reindeer power machines, fiber-optic antlers glow."
         ]
         self.conversation_history = []
@@ -53,7 +57,7 @@ class PromptGenerator:
                     break
             
             # Build system context with plugin information
-            system_context = "\n".join([
+            system_context_parts = [
                 "You are a creative prompt generator for image generation.",
                 "Generate unique and imaginative prompts that would inspire beautiful AI-generated images.",
                 "IMPORTANT: Prompts MUST be concise and fit within 77 tokens (approximately 60 words).",
@@ -63,13 +67,20 @@ class PromptGenerator:
                 *[f"- {desc}" for desc in context_data["descriptions"]],
                 f"\nCurrent temporal context: {temporal_context}",
                 "Begin the prompt with this temporal context, then add a concise but vivid scene description.",
-                "Example format: '[temporal/style context]: [scene with Lora as subject]'",
                 "Keep the final combined prompt (including context) within the 77 token limit.",
-                "You may choose which context elements to incorporate based on relevance.",
-                "\nIMPORTANT: If a Lora keyword is provided, you MUST make it a central subject or character in the scene.",
-                "The Lora keyword should be in single quotes and be an active participant in the scene.",
-                "For example: 'scene with '<keyword>' as the main character doing something'"
-            ])
+                "You may choose which context elements to incorporate based on relevance."
+            ]
+            
+            # Only add Lora-specific instructions if a Lora keyword is available
+            if lora_keyword:
+                system_context_parts.extend([
+                    "\nIMPORTANT: You MUST make the Lora keyword a central subject or character in the scene.",
+                    "The Lora keyword should be in single quotes and be an active participant in the scene.",
+                    "Example format: '[temporal/style context]: [scene with Lora as subject]'",
+                    "For example: 'scene with '<keyword>' as the main character doing something'"
+                ])
+            
+            system_context = "\n".join(system_context_parts)
             
             if lora_keyword:
                 system_context += f"\nCurrent Lora keyword that MUST be used as a subject in single quotes: '{lora_keyword}'"
@@ -79,17 +90,28 @@ class PromptGenerator:
             
             # Initialize conversation if empty
             if not self.conversation_history:
+                # Select appropriate example prompts based on whether a Lora keyword is available
+                example_prompts = self.regular_example_prompts.copy()
+                if lora_keyword:
+                    example_prompts.extend(self.lora_example_prompts)
+                
+                # Create user message with examples
+                user_message_parts = [
+                    "Here are some example prompts:",
+                    *[f"Example {i+1}: {prompt}" for i, prompt in enumerate(example_prompts)],
+                    "\nGenerate a new prompt that is different from these examples but equally creative."
+                ]
+                
+                # Add Lora-specific instruction if a Lora keyword is available
+                if lora_keyword:
+                    user_message_parts.append("Make the Lora keyword the central subject or character in the scene.")
+                
                 self.conversation_history = [{
                     "role": "system",
                     "content": system_context
                 }, {
                     "role": "user",
-                    "content": "\n".join([
-                        "Here are some example prompts:",
-                        *[f"Example {i+1}: {prompt}" for i, prompt in enumerate(self.example_prompts)],
-                        "\nGenerate a new prompt that is different from these examples but equally creative.",
-                        "If a Lora keyword is provided, make it the central subject or character in the scene."
-                    ])
+                    "content": "\n".join(user_message_parts)
                 }]
             
             # Generate prompt with logging
@@ -109,9 +131,14 @@ class PromptGenerator:
                 "role": "assistant",
                 "content": new_prompt
             })
+            # Create next user message
+            next_message = "Generate another unique prompt, different from previous ones."
+            if lora_keyword:
+                next_message += " Remember to make the Lora keyword the central subject in the scene."
+            
             self.conversation_history.append({
                 "role": "user",
-                "content": "Generate another unique prompt, different from previous ones. Remember to make any Lora keyword the central subject in the scene."
+                "content": next_message
             })
             
             # Update metrics
