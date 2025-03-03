@@ -151,7 +151,6 @@ Loras can be used to add specific likenesses (people, characters) or artistic st
 - [Fal.ai](https://fal.ai/) - Offers high-quality Loras for various styles and subjects
 - [CivitAI](https://civitai.com/) - Large community library of Loras for characters and styles
 - [Hugging Face](https://huggingface.co/) - Many open-source Loras with various licenses
-- [ComfyUI Manager](https://github.com/ltdrdata/ComfyUI-Manager) - Easy integration with ComfyUI
 
 ### Configuration
 ```bash
