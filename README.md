@@ -158,6 +158,34 @@ loras/
 
 Note: When using Loras, always make the Lora keyword a central subject in your prompt using single quotes, e.g., 'your_lora_name'.
 
+## 🌐 Host-Image Feature
+
+Share your AI-generated masterpieces with the world! This feature allows you to have your latest generated image available on a public endpoint using Cloudflare Workers and R2 storage.
+
+> **Note**: This feature is already in use to serve the image at the top of this README!
+
+### How It Works
+1. Your generated images are uploaded to a Cloudflare R2 bucket
+2. A Cloudflare Worker serves the latest image via a public URL
+3. You can embed this URL anywhere (websites, social media, etc.)
+
+### Requirements
+- Cloudflare account with Workers and R2 access
+- Basic knowledge of Cloudflare Workers deployment
+
+### Setup Instructions
+1. Clone the host-image directory
+2. Configure your R2 bucket in wrangler.jsonc
+3. Deploy using `wrangler deploy`
+
+### Usage
+Once deployed, your image will be available at your worker's URL:
+```
+https://host-image.yourdomain.workers.dev/
+```
+
+Perfect for embedding in websites, sharing on social media, or creating an always-updating display of your AI art!
+
 ## ⚙️ Environment Configuration
 
 Set these environment variables before running:
@@ -178,5 +206,3 @@ export LORA_DIR=C:/ComfyUI/ComfyUI/models/loras
 export ENABLED_LORAS=your_lora_name
 export LORA_APPLICATION_PROBABILITY=0.99
 ```
-
-[Rest of README remains unchanged...]
