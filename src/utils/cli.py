@@ -143,19 +143,22 @@ def generate(
                             border_style="green"
                         ))
 
-                    # Get output path
-                    output_path = storage.get_output_path(generated_prompt)
+                    # Get output paths (image and prompt)
+                    image_path, prompt_path = storage.get_output_path(generated_prompt)
                     
                     # Generate image
                     image_task = progress.add_task("[cyan]Generating image...", total=None)
-                    output_path, gen_time, model_name = await image_gen.generate_image(generated_prompt, output_path)
+                    image_path, gen_time, model_name = await image_gen.generate_image(
+                        generated_prompt, 
+                        (image_path, prompt_path)
+                    )
                     progress.remove_task(image_task)
                     
                     # Show success message with details
                     console.print(Panel(
                         f"[bold green]Image generated successfully![/bold green]\n\n"
-                        f"📁 Saved to: {output_path}\n"
-                        f"📝 Prompt saved to: {output_path.with_suffix('.txt')}\n\n"
+                        f"📁 Saved to: {image_path}\n"
+                        f"📝 Prompt saved to: {prompt_path}\n\n"
                         f"[dim]Model: {model_name}\n"
                         f"Time: {gen_time:.1f}s\n"
                         f"Prompt: {generated_prompt}[/dim]",
@@ -297,18 +300,18 @@ def loop(
                                 border_style="blue"
                             ))
 
-                            # Get output path and generate
-                            output_path = storage.get_output_path(prompt)
+                            # Get output paths and generate
+                            image_path, prompt_path = storage.get_output_path(prompt)
                             force_reinit = (i > 0 and i % 5 == 0)  # Reinit every 5 images
-                            output_path, gen_time, model_name = await image_gen.generate_image(
+                            image_path, gen_time, model_name = await image_gen.generate_image(
                                 prompt, 
-                                output_path,
+                                (image_path, prompt_path),
                                 force_reinit=force_reinit
                             )
                             
                             console.print(
                                 f"[green]✓[/green] Image {i+1} generated in {gen_time:.1f}s using {model_name}\n"
-                                f"   📁 {output_path}"
+                                f"   📁 {image_path}"
                             )
                             
                             progress.update(batch_task, advance=1)
@@ -330,6 +333,10 @@ def loop(
                     # End metrics collection and show summary
                     metrics.end_batch()
                     perf_metrics = metrics.get_performance_metrics()
+                    # Clean up any orphaned prompt files (if any images failed)
+                    orphaned_count = storage.cleanup_orphaned_prompt_files()
+                    if orphaned_count > 0:
+                        console.print(f"[yellow]Cleaned up {orphaned_count} orphaned prompt files.[/yellow]")
                     
                     console.print(Panel(
                         f"[bold green]Batch generation complete![/bold green]\n"

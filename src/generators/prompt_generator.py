@@ -149,7 +149,7 @@ class PromptGenerator:
             return new_prompt
             
         except ImportError:
-            raise PromptError("Please install ollama-python: pip install ollama")
+            raise PromptError("Please install ollama: pip install ollama")
         except Exception as e:
             raise PromptError(f"Error generating prompt: {str(e)}")
     

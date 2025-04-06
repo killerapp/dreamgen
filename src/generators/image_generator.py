@@ -171,8 +171,21 @@ class ImageGenerator:
             print(f"GPU Memory: {allocated:.2f} GB allocated, {reserved:.2f} GB reserved (Total: {total:.2f} GB)")
 
     @handle_errors(error_type=ModelError, retries=1, cleanup_func=lambda: self.memory_manager.optimize_memory_usage())
-    async def generate_image(self, prompt: str, output_path: Path, force_reinit: bool = False) -> Tuple[Path, float, str]:
-        """Generate an image from the given prompt."""
+    async def generate_image(self, prompt: str, output_paths: tuple[Path, Path], force_reinit: bool = False) -> Tuple[Path, float, str]:
+        """
+        Generate an image from the given prompt.
+        
+        Args:
+            prompt: The text prompt for image generation
+            output_paths: Tuple of (image_path, prompt_path)
+            force_reinit: Whether to force reinitialization of the model
+            
+        Returns:
+            Tuple[Path, float, str]: (image_path, generation_time, model_name)
+        """
+        from ..utils.storage import StorageManager  # Import here to avoid circular imports
+        
+        image_path, prompt_path = output_paths
         metrics = GenerationMetrics(prompt=prompt, model_name=self.model_name)
         start_time = time.time()
         
@@ -183,11 +196,29 @@ class ImageGenerator:
                 force_reinit = True
             self.initialize(force_reinit)
             
+            # Check if output directory is writable before generating the image
+            if not image_path.parent.exists():
+                try:
+                    image_path.parent.mkdir(parents=True, exist_ok=True)
+                except Exception as e:
+                    logger.error(f"Failed to create output directory: {str(e)}")
+                    raise ResourceError(f"Output directory not writable: {image_path.parent}")
+            
+            # Test write access to output path
+            try:
+                test_file = image_path.parent / ".write_test"
+                test_file.touch()
+                test_file.unlink()
+            except Exception as e:
+                logger.error(f"Output directory not writable: {str(e)}")
+                raise ResourceError(f"Cannot write to output directory: {image_path.parent}")
+            
             # Generate image
+            logger.info(f"Generating image with {self.num_inference_steps} steps at {self.height}x{self.width}")
             with torch.inference_mode(), torch.amp.autocast(self.device, enabled=self.device in ["cuda", "mps"]):
                 image = self.pipe(
                     prompt=prompt,
-                    prompt_2=prompt,
+                    prompt_2=prompt,  # Use same prompt for both encoders
                     num_inference_steps=self.num_inference_steps,
                     guidance_scale=self.guidance_scale,
                     true_cfg_scale=self.true_cfg_scale,
@@ -197,16 +228,26 @@ class ImageGenerator:
                 ).images[0]
             
             # Save image
-            output_path.parent.mkdir(parents=True, exist_ok=True)
-            image.save(output_path)
+            try:
+                image.save(image_path)
+                logger.info(f"Image saved to {image_path}")
+                
+                # Only save prompt text after successful image generation
+                storage_mgr = StorageManager(image_path.parent.parent.parent)
+                storage_mgr.save_prompt_file(prompt_path, prompt)
+            except Exception as e:
+                logger.error(f"Failed to save image: {str(e)}")
+                raise ResourceError(f"Failed to save image: {str(e)}")
             
             # Update metrics
             metrics.generation_time = time.time() - start_time
             if self.device == "cuda":
                 metrics.gpu_memory_peak = torch.cuda.max_memory_allocated() / 1024**3
-            # MPS doesn't have a direct memory tracking API like CUDA
+            elif self.device == "mps":
+                # For MPS, we don't have a direct API, but we can estimate from MemoryManager
+                _, _, _ = self.memory_manager.get_gpu_memory_info()
             
-            return output_path, metrics.generation_time, self.model_name.split('/')[-1]
+            return image_path, metrics.generation_time, self.model_name.split('/')[-1]
             
         except Exception as e:
             metrics.success = False

@@ -1,0 +1,3 @@
+always use 'uv' by astral, uv sync, uv add, and for quick test files use the uv inline dependency tables, use uv tool and try not to use the pip drop-in and similar backwards compatability
+
+if there is a .context/index.md start there for an idea of what the project is.

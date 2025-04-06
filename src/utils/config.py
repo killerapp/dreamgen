@@ -87,8 +87,8 @@ class Config:
             output_dir=Path(os.getenv('OUTPUT_DIR', SystemConfig.output_dir)),
             log_dir=Path(os.getenv('LOG_DIR', SystemConfig.log_dir)),
             cache_dir=Path(os.getenv('CACHE_DIR', SystemConfig.cache_dir)),
-            cpu_only=bool(os.getenv('CPU_ONLY', SystemConfig.cpu_only)),
-            mps_use_fp16=bool(os.getenv('MPS_USE_FP16', SystemConfig.mps_use_fp16))
+            cpu_only=self._parse_bool_env('CPU_ONLY', SystemConfig.cpu_only),
+            mps_use_fp16=self._parse_bool_env('MPS_USE_FP16', SystemConfig.mps_use_fp16)
         )
         
     @classmethod
@@ -128,6 +128,33 @@ class Config:
         with open(config_path, 'w') as f:
             json.dump(self.to_dict(), f, indent=2)
             
+    def _parse_bool_env(self, env_var: str, default: bool) -> bool:
+        """
+        Parse boolean environment variables correctly.
+        
+        Args:
+            env_var: Environment variable name
+            default: Default value if not set
+            
+        Returns:
+            bool: Parsed boolean value
+        """
+        value = os.getenv(env_var)
+        if value is None:
+            return default
+            
+        # Convert to lowercase for case-insensitive comparison
+        value = value.lower()
+        # Check for various representations of True
+        if value in ('true', 't', 'yes', 'y', '1'):
+            return True
+        # Check for various representations of False
+        elif value in ('false', 'f', 'no', 'n', '0'):
+            return False
+            
+        # For any other value, return default
+        return default
+    
     def validate(self) -> list[str]:
         """
         Validate configuration values.
@@ -160,3 +187,49 @@ class Config:
                 errors.append(f"Invalid {path_attr}: {path} ({str(e)})")
                 
         return errors
+        
+    def apply_validation(self) -> bool:
+        """
+        Validate and enforce configuration constraints.
+        
+        Returns:
+            bool: True if valid after corrections, False if validation failed
+        """
+        errors = self.validate()
+        if not errors:
+            return True
+            
+        # Try to fix common issues
+        # 1. Fix image dimensions
+        if not (128 <= self.image.height <= 2048):
+            self.image.height = max(128, min(2048, self.image.height))
+        if not (128 <= self.image.width <= 2048):
+            self.image.width = max(128, min(2048, self.image.width))
+            
+        # 2. Fix model parameters
+        if not (1 <= self.image.num_inference_steps <= 150):
+            self.image.num_inference_steps = max(1, min(150, self.image.num_inference_steps))
+        if not (1.0 <= self.image.guidance_scale <= 30.0):
+            self.image.guidance_scale = max(1.0, min(30.0, self.image.guidance_scale))
+        if not (1.0 <= self.image.true_cfg_scale <= 10.0):
+            self.image.true_cfg_scale = max(1.0, min(10.0, self.image.true_cfg_scale))
+            
+        # 3. Ensure system paths are valid and writable
+        for path_attr in ['output_dir', 'log_dir', 'cache_dir']:
+            path = getattr(self.system, path_attr)
+            try:
+                # Create directory if it doesn't exist
+                path.mkdir(parents=True, exist_ok=True)
+                # Test write access by creating and removing a test file
+                test_file = path / ".test_write_access"
+                test_file.touch()
+                test_file.unlink()
+            except Exception:
+                # If the path is invalid or not writable, use a default path
+                fallback_path = Path(f"./{path_attr.replace('_dir', '')}")
+                fallback_path.mkdir(parents=True, exist_ok=True)
+                setattr(self.system, path_attr, fallback_path)
+                
+        # Check if we've resolved all errors
+        remaining_errors = self.validate()
+        return len(remaining_errors) == 0

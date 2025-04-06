@@ -190,15 +190,62 @@ class SystemDiagnostics:
             "issues": []
         }
         
-        # Check for Ollama
+        # Check for Ollama - first check the service before checking for CLI
+        ollama_found = False
+        
+        # First method: Check if Ollama server is running on port 11434
         try:
-            ollama_version = subprocess.check_output(["ollama", "version"], 
-                                                    stderr=subprocess.STDOUT, 
-                                                    text=True).strip()
-            result["dependencies"]["ollama"] = ollama_version
-        except (subprocess.SubprocessError, FileNotFoundError):
+            import socket
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.settimeout(1)
+                connection_result = s.connect_ex(('127.0.0.1', 11434))
+                if connection_result == 0:
+                    ollama_found = True
+                    result["dependencies"]["ollama"] = "Running (port 11434)"
+        except Exception:
+            pass
+            
+        # Second method: Use a simple HTTP request to check the API
+        if not ollama_found:
+            try:
+                import urllib.request
+                response = urllib.request.urlopen('http://127.0.0.1:11434/api/tags', timeout=1)
+                if response.status == 200:
+                    ollama_found = True
+                    result["dependencies"]["ollama"] = "Running (API available)"
+            except Exception:
+                pass
+                
+        # Third method: Check for CLI if server detection failed
+        if not ollama_found:
+            try:
+                ollama_version = subprocess.check_output(
+                    ["ollama", "version"], 
+                    stderr=subprocess.STDOUT, 
+                    text=True,
+                    timeout=2
+                ).strip()
+                ollama_found = True
+                result["dependencies"]["ollama"] = ollama_version
+            except (subprocess.SubprocessError, FileNotFoundError, subprocess.TimeoutExpired):
+                pass
+            
+        # Fourth method: Check for running process
+        if not ollama_found:
+            try:
+                # Look for 'ollama' process
+                for proc in psutil.process_iter(['name']):
+                    if 'ollama' in proc.info['name'].lower():
+                        ollama_found = True
+                        result["dependencies"]["ollama"] = "Running (process found)"
+                        break
+            except Exception:
+                pass
+                
+        # If all methods failed, report as not found
+        if not ollama_found:
             result["dependencies"]["ollama"] = "Not found"
-            result["issues"].append("Ollama not found in PATH. Required for prompt generation.")
+            result["issues"].append("Ollama not found. Required for prompt generation.")
             
         return result
         
@@ -220,7 +267,7 @@ class SystemDiagnostics:
         # Check for MPS (Apple Silicon)
         elif hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
             device = "mps"
-            recommendations.append(f"Using Apple Silicon GPU: {platform.processor()}")
+            recommendations.append(f"System detected: Apple Silicon ({platform.processor()}) with MPS acceleration")
             
             # Check if we should use fp16
             if self.config and not self.config.system.mps_use_fp16:
