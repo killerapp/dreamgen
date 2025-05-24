@@ -6,6 +6,14 @@ Like electric sheep in the dreams of androids, this project explores the boundar
 
 ![Do androids dream of electric sheep?](https://host-image.agentic.workers.dev/)
 
+## 🔑 Key Benefits
+
+- **100% Local Processing**: Everything runs locally on your machine - no cloud APIs, no usage limits!
+- **Privacy-First**: Your prompts and generated images never leave your computer
+- **Internet-Optional**: Only connects to the internet to download model weights
+- **Extensible Plugin System**: Enhance your prompts with local or remote data sources
+- **No Subscription Fees**: Generate unlimited images without ongoing costs
+
 ## 🚀 Quick Start
 
 1. Install prerequisites:
@@ -44,16 +52,52 @@ Like electric sheep in the dreams of androids, this project explores the boundar
 
 ## ✨ Features
 
-- AI-powered prompt generation using Ollama
-- Image generation using Flux transformers
-- Interactive mode for prompt feedback (be the art director!)
-- Lora support for custom model fine-tuning
-- Plugin system for dynamic prompt enhancement:
+- **Powerful Plugin System** for dynamic prompt enhancement:
   - Time of day context (morning/afternoon/evening/night)
   - Holiday detection and theming (because every day is special 🎉)
   - Art style variation (90+ distinct styles)
   - Lora integration (custom model fine-tuning)
   - Extensible plugin architecture (PRs welcome! 🙌)
+- AI-powered prompt generation using Ollama (runs 100% locally)
+- Image generation using Flux transformers (runs 100% locally)
+- Interactive mode for prompt feedback (be the art director!)
+- Lora support for custom model fine-tuning
+
+## 🔌 Plugin System
+
+The plugin system is the heart of what makes this project special. It dynamically enhances prompts with contextual information to create more creative, relevant, and diverse images.
+
+### How It Works
+
+1. **Modular Architecture**: Each plugin is a standalone Python module that can be enabled/disabled independently
+2. **Context Injection**: Plugins provide contextual information that gets seamlessly integrated into prompts
+3. **Local & Remote Sources**: Plugins can use local data files or connect to remote APIs (while respecting your privacy settings)
+4. **Easy Extensibility**: Create your own plugins with minimal code to add custom functionality
+
+### Included Plugins
+
+- **Time of Day**: Adapts prompts to morning, afternoon, evening, or night themes
+- **Holiday Awareness**: Detects upcoming holidays and incorporates them into prompts
+- **Art Style Variation**: Rotates through 90+ distinct art styles to keep generations fresh
+- **Lora Integration**: Seamlessly incorporates your custom Lora models as subjects
+- **Day of Week**: Adjusts prompts based on the current day of the week
+
+### Creating Custom Plugins
+
+The plugin system follows a simple interface pattern, making it easy to create your own:
+
+```python
+def get_context() -> Optional[str]:
+    """Return contextual information to enhance prompts"""
+    return "your custom context here"
+```
+
+Place your plugin in the `src/plugins/` directory and update the plugin manager to include it. Your plugin can:
+- Read from local data files
+- Connect to APIs (with proper authentication)
+- Use system information
+- Implement caching for performance
+- Maintain state between generations
 
 ## 🎮 Command Reference
 
