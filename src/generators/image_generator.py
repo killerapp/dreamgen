@@ -6,6 +6,7 @@ from typing import Optional, Tuple, Literal
 import os
 import time
 import logging
+import traceback
 import torch
 from diffusers import DiffusionPipeline
 from PIL import Image
@@ -18,12 +19,14 @@ from ..utils.metrics import GenerationMetrics
 from ..plugins import register_lora_plugin, plugin_manager
 from ..plugins.lora import get_lora_path
 
-# Configure logging to suppress verbose output
+# Configure logging
 logging.getLogger("transformers").setLevel(logging.WARNING)
 logging.getLogger("diffusers").setLevel(logging.WARNING)
 logging.getLogger("accelerate").setLevel(logging.WARNING)
 
+# Create a dedicated logger for this module
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)  # Set to DEBUG level for more detailed logging
 
 class ImageGenerator:
     def __init__(self, config: Config):
@@ -90,85 +93,145 @@ class ImageGenerator:
     def initialize(self, force_reinit: bool = False):
         """Initialize the Flux diffusion pipeline."""
         if force_reinit and self.pipe is not None:
+            logger.debug("Force reinitialization requested, cleaning up existing pipeline")
             self.cleanup()
             
         if self.pipe is None:
+            logger.info("Initializing diffusion pipeline")
             # Check and optimize memory before loading
             is_critical, status = self.memory_manager.check_memory_pressure()
             if is_critical:
-                print(f"Memory status: {status}")
+                logger.warning(f"Memory status: {status}")
                 self.memory_manager.optimize_memory_usage()
                 
-            print(f"Loading model on {self.device}...")
+            logger.info(f"Loading model on {self.device}...")
             
             # Set memory management environment variables
             os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "max_split_size_mb:512"
+            logger.debug("Set PYTORCH_CUDA_ALLOC_CONF to max_split_size_mb:512")
             
             # Determine appropriate torch dtype based on device
             if self.device == "cuda":
                 torch_dtype = torch.float16
+                logger.debug("Using torch.float16 for CUDA device")
             elif self.device == "mps":
                 # MPS works better with float32 for most models, but can use float16 for some
                 torch_dtype = torch.float16 if self.config.system.mps_use_fp16 else torch.float32
+                logger.debug(f"Using {'torch.float16' if self.config.system.mps_use_fp16 else 'torch.float32'} for MPS device")
             else:
                 torch_dtype = torch.float32
+                logger.debug("Using torch.float32 for CPU device")
                 
             # Get HF token if available
             hf_token = os.environ.get("HF_TOKEN")
+            logger.debug(f"HF token available: {hf_token is not None}")
             
-            # Load model with memory optimizations
-            self.pipe = DiffusionPipeline.from_pretrained(
-                self.model_name,
-                torch_dtype=torch_dtype,
-                low_cpu_mem_usage=True,
-                device_map="balanced" if self.device == "cuda" else None,
-                use_auth_token=hf_token if hf_token and hf_token != "your_hugging_face_token_here" else None
-            )
-            
-            # Move model to device first
-            self.pipe.to(self.device)
-            
-            # Load random Lora if selected through plugin system
-            plugin_results = plugin_manager.execute_plugins()
-            for result in plugin_results:
-                if result.name == "lora" and result.value:
+            try:
+                # Load model with memory optimizations
+                logger.info(f"Loading model from {self.model_name}")
+                try:
+                    self.pipe = DiffusionPipeline.from_pretrained(
+                        self.model_name,
+                        torch_dtype=torch_dtype,
+                        low_cpu_mem_usage=True,
+                        device_map="balanced" if self.device == "cuda" else None,
+                        use_auth_token=hf_token if hf_token and hf_token != "your_hugging_face_token_here" else None
+                    )
+                    logger.debug("Model loaded successfully")
+                except OSError as e:
+                    # Check for Windows paging file error
+                    if "paging file is too small" in str(e) or "os error 1455" in str(e).lower():
+                        print("\nERROR: Windows paging file is too small. Increase virtual memory in system settings and restart.")
+                    raise
+                
+                # Move model to device first if not using sequential CPU offloading
+                # Skip this step if device_map is set, as it's already handled by the pipeline
+                if not hasattr(self.pipe, 'device_map') or self.pipe.device_map is None:
+                    logger.debug(f"Moving model to {self.device}")
                     try:
-                        lora_path = get_lora_path(result.value, self.config)
-                        if lora_path:
-                            logger.info(f"Loading Lora: {result.value} from {lora_path}")
-                            # Basic Lora loading without extra parameters
-                            self.pipe.load_lora_weights(str(lora_path))
+                        self.pipe.to(self.device)
+                        logger.debug("Model moved to device successfully")
+                    except ValueError as e:
+                        if "sequential model offloading" in str(e):
+                            logger.warning("Sequential CPU offloading detected, skipping device move")
+                            # Continue without moving to device as it's already handled by offloading
                         else:
-                            logger.warning(f"Could not find Lora path for: {result.value}")
-                    except Exception as e:
-                        logger.error(f"Error loading Lora: {str(e)}")
-            
-            # Set up device-specific optimizations
-            if self.device in ["cuda", "mps"]:
-                self._setup_gpu_optimizations()
+                            raise
+                else:
+                    logger.debug(f"Model already has device_map set, skipping manual device placement")
+                
+                # Load random Lora if selected through plugin system
+                logger.info("Checking for Lora plugins")
+                try:
+                    plugin_results = plugin_manager.execute_plugins()
+                    logger.debug(f"Plugin results: {plugin_results}")
+                    
+                    for result in plugin_results:
+                        if result.name == "lora" and result.value:
+                            logger.info(f"Found Lora plugin with value: {result.value}")
+                            try:
+                                lora_path = get_lora_path(result.value, self.config)
+                                logger.debug(f"Lora path: {lora_path}")
+                                
+                                if lora_path:
+                                    logger.info(f"Loading Lora: {result.value} from {lora_path}")
+                                    # Basic Lora loading without extra parameters
+                                    try:
+                                        self.pipe.load_lora_weights(str(lora_path))
+                                        logger.info("Lora weights loaded successfully")
+                                    except Exception as lora_load_error:
+                                        logger.error(f"Error loading Lora weights: {str(lora_load_error)}")
+                                        logger.error(f"Traceback: {traceback.format_exc()}")
+                                else:
+                                    logger.warning(f"Could not find Lora path for: {result.value}")
+                            except Exception as lora_path_error:
+                                logger.error(f"Error getting Lora path: {str(lora_path_error)}")
+                                logger.error(f"Traceback: {traceback.format_exc()}")
+                except Exception as plugin_error:
+                    logger.error(f"Error executing plugins: {str(plugin_error)}")
+                    logger.error(f"Traceback: {traceback.format_exc()}")
+                
+                # Set up device-specific optimizations
+                if self.device in ["cuda", "mps"]:
+                    logger.info("Setting up GPU optimizations")
+                    self._setup_gpu_optimizations()
+                    
+            except Exception as model_load_error:
+                logger.error(f"Error loading model: {str(model_load_error)}")
+                logger.error(f"Traceback: {traceback.format_exc()}")
+                raise
     
     def _setup_gpu_optimizations(self):
         """Set up GPU-specific optimizations for the pipeline."""
-        # Attention slicing works on both CUDA and MPS
-        self.pipe.enable_attention_slicing()
-        print("Enabled attention slicing")
-        
-        # VAE tiling works on both CUDA and MPS
-        self.pipe.enable_vae_tiling()
-        print("Enabled VAE tiling")
-        
-        # xformers is CUDA-specific
-        if self.device == "cuda":
-            try:
-                self.pipe.enable_xformers_memory_efficient_attention()
-                print("Enabled xformers memory efficient attention")
-            except Exception:
-                print("Xformers optimization not available")
-        
-        # Print memory info if available
-        allocated, reserved, total = self.memory_manager.get_gpu_memory_info()
-        if total > 0:
-            print(f"GPU Memory: {allocated:.2f} GB allocated, {reserved:.2f} GB reserved (Total: {total:.2f} GB)")
+        try:
+            # Attention slicing works on both CUDA and MPS
+            logger.debug("Enabling attention slicing")
+            self.pipe.enable_attention_slicing()
+            print("Enabled attention slicing")
+            
+            # VAE tiling works on both CUDA and MPS
+            logger.debug("Enabling VAE tiling")
+            self.pipe.enable_vae_tiling()
+            print("Enabled VAE tiling")
+            
+            # xformers is CUDA-specific
+            if self.device == "cuda":
+                try:
+                    logger.debug("Attempting to enable xformers memory efficient attention")
+                    self.pipe.enable_xformers_memory_efficient_attention()
+                    print("Enabled xformers memory efficient attention")
+                except Exception as xformers_error:
+                    logger.warning(f"Xformers optimization not available: {str(xformers_error)}")
+                    print("Xformers optimization not available")
+            
+            # Print memory info if available
+            allocated, reserved, total = self.memory_manager.get_gpu_memory_info()
+            if total > 0:
+                logger.debug(f"GPU Memory: {allocated:.2f} GB allocated, {reserved:.2f} GB reserved (Total: {total:.2f} GB)")
+                print(f"GPU Memory: {allocated:.2f} GB allocated, {reserved:.2f} GB reserved (Total: {total:.2f} GB)")
+        except Exception as opt_error:
+            logger.error(f"Error setting up GPU optimizations: {str(opt_error)}")
+            logger.error(f"Traceback: {traceback.format_exc()}")
 
     @handle_errors(error_type=ModelError, retries=1, cleanup_func=lambda: self.memory_manager.optimize_memory_usage())
     async def generate_image(self, prompt: str, output_path: Path, force_reinit: bool = False) -> Tuple[Path, float, str]:
@@ -177,47 +240,109 @@ class ImageGenerator:
         start_time = time.time()
         
         try:
+            logger.info(f"Starting image generation with prompt: {prompt[:50]}...")
+            
             # Check memory and initialize
-            is_critical, _ = self.memory_manager.check_memory_pressure()
+            is_critical, memory_status = self.memory_manager.check_memory_pressure()
+            logger.debug(f"Memory status: {memory_status}")
             if is_critical:
+                logger.warning(f"Critical memory pressure detected: {memory_status}")
                 force_reinit = True
+                
+            logger.debug(f"Initializing model (force_reinit={force_reinit})")
             self.initialize(force_reinit)
             
+            # Log model and generation parameters
+            logger.info(f"Model: {self.model_name}, Device: {self.device}")
+            logger.debug(f"Parameters: steps={self.num_inference_steps}, guidance={self.guidance_scale}, "
+                        f"true_cfg={self.true_cfg_scale}, size={self.width}x{self.height}")
+            
             # Generate image
-            with torch.inference_mode(), torch.amp.autocast(self.device, enabled=self.device in ["cuda", "mps"]):
-                image = self.pipe(
-                    prompt=prompt,
-                    prompt_2=prompt,
-                    num_inference_steps=self.num_inference_steps,
-                    guidance_scale=self.guidance_scale,
-                    true_cfg_scale=self.true_cfg_scale,
-                    height=self.height,
-                    width=self.width,
-                    max_sequence_length=self.max_sequence_length,
-                ).images[0]
+            logger.info("Starting inference...")
+            try:
+                with torch.inference_mode(), torch.amp.autocast(self.device, enabled=self.device in ["cuda", "mps"]):
+                    logger.debug("Entering inference mode with autocast")
+                    
+                    # Log memory before inference
+                    if self.device == "cuda":
+                        allocated = torch.cuda.memory_allocated() / 1024**3
+                        reserved = torch.cuda.memory_reserved() / 1024**3
+                        logger.debug(f"GPU Memory before inference: {allocated:.2f} GB allocated, {reserved:.2f} GB reserved")
+                    
+                    # Run inference with detailed error handling
+                    try:
+                        logger.debug("Calling pipe with prompt")
+                        image = self.pipe(
+                            prompt=prompt,
+                            prompt_2=prompt,
+                            num_inference_steps=self.num_inference_steps,
+                            guidance_scale=self.guidance_scale,
+                            true_cfg_scale=self.true_cfg_scale,
+                            height=self.height,
+                            width=self.width,
+                            max_sequence_length=self.max_sequence_length,
+                        ).images[0]
+                        logger.debug("Pipe call completed successfully")
+                    except Exception as inference_error:
+                        logger.error(f"Error during inference: {str(inference_error)}")
+                        logger.error(f"Traceback: {traceback.format_exc()}")
+                        raise
+            except Exception as outer_error:
+                logger.error(f"Error in inference context: {str(outer_error)}")
+                logger.error(f"Traceback: {traceback.format_exc()}")
+                raise
+            
+            # Log memory after inference
+            if self.device == "cuda":
+                allocated = torch.cuda.memory_allocated() / 1024**3
+                reserved = torch.cuda.memory_reserved() / 1024**3
+                logger.debug(f"GPU Memory after inference: {allocated:.2f} GB allocated, {reserved:.2f} GB reserved")
             
             # Save image
+            logger.info(f"Saving image to {output_path}")
             output_path.parent.mkdir(parents=True, exist_ok=True)
-            image.save(output_path)
+            try:
+                image.save(output_path)
+                logger.debug("Image saved successfully")
+                
+                # Also save prompt to text file
+                with open(output_path.with_suffix('.txt'), 'w') as f:
+                    f.write(prompt)
+                logger.debug("Prompt saved to text file")
+            except Exception as save_error:
+                logger.error(f"Error saving image: {str(save_error)}")
+                raise
             
             # Update metrics
             metrics.generation_time = time.time() - start_time
             if self.device == "cuda":
                 metrics.gpu_memory_peak = torch.cuda.max_memory_allocated() / 1024**3
-            # MPS doesn't have a direct memory tracking API like CUDA
+                logger.debug(f"GPU memory peak: {metrics.gpu_memory_peak:.2f} GB")
             
+            logger.info(f"Image generation completed in {metrics.generation_time:.2f} seconds")
             return output_path, metrics.generation_time, self.model_name.split('/')[-1]
             
         except Exception as e:
             metrics.success = False
             metrics.error = str(e)
+            logger.error(f"Image generation failed: {str(e)}")
+            logger.error(f"Traceback: {traceback.format_exc()}")
             raise
         finally:
+            logger.debug("Running memory optimization in finally block")
             self.memory_manager.optimize_memory_usage()
     
     def cleanup(self):
         """Clean up resources."""
+        logger.info("Cleaning up resources")
         if self.pipe is not None:
-            del self.pipe
-            self.pipe = None
+            logger.debug("Deleting pipeline")
+            try:
+                del self.pipe
+                self.pipe = None
+                logger.debug("Pipeline deleted")
+            except Exception as cleanup_error:
+                logger.error(f"Error during cleanup: {str(cleanup_error)}")
+            
+            logger.debug("Optimizing memory usage")
             self.memory_manager.optimize_memory_usage()
