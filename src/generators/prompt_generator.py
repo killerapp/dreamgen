@@ -31,6 +31,11 @@ class PromptGenerator:
         self.conversation_history = []
         self.logger = logging.getLogger(__name__)
         self.thinking_process = []  # Initialize thinking_process
+        self.logger.info(
+            "Initialized PromptGenerator with Ollama model '%s' (temperature=%.2f)",
+            self.model_name,
+            self.config.model.ollama_temperature,
+        )
         
     @handle_errors(error_type=PromptError, retries=2)
     async def generate_prompt(self) -> str:
@@ -115,8 +120,12 @@ class PromptGenerator:
                     "content": "\n".join(user_message_parts)
                 }]
             
-            # Generate prompt with logging
-            self.logger.info("Generating prompt with Ollama...")
+            # Log model details
+            self.logger.info(
+                "Generating prompt with Ollama model '%s' (temperature=%.2f)",
+                self.model_name,
+                self.config.model.ollama_temperature,
+            )
             
             response_stream = ollama.chat(
                 model=self.model_name,
