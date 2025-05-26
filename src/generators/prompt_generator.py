@@ -131,6 +131,7 @@ class PromptGenerator:
             in_think_tag = False
 
             for chunk in response_stream:
+                self.logger.debug(f"Raw Ollama stream chunk: {chunk}") # Log each raw chunk
                 if 'message' in chunk and 'content' in chunk['message']:
                     content_piece = chunk['message']['content']
                     
