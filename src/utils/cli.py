@@ -139,7 +139,7 @@ def generate(
                         progress.remove_task(prompt_task)
                         
                         # Display thinking process
-                        if hasattr(prompt_gen, 'thinking_process') and prompt_gen.thinking_process:
+                        if prompt_gen.thinking_process:
                             console.print(Panel(
                                 "\n".join([f"[dim]Thought: {think_step}[/dim]" for think_step in prompt_gen.thinking_process]),
                                 title="[cyan]Reasoning Process[/cyan]",
