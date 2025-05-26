@@ -1,7 +1,10 @@
 import json
+import logging
 import random
 from pathlib import Path
 from typing import NamedTuple, Optional
+
+logger = logging.getLogger(__name__)
 
 class ArtStyle(NamedTuple):
     """Container for art style information."""
@@ -32,7 +35,7 @@ class ArtStylePlugin:
                     for style in data["styles"]
                 ]
         except (FileNotFoundError, json.JSONDecodeError, KeyError) as e:
-            print(f"Error loading art styles: {str(e)}")
+            logger.error(f"Error loading art styles: {str(e)}")
             self._styles = []
 
     def get_random_style(self, avoid_last: bool = True) -> Optional[ArtStyle]:
@@ -48,13 +51,24 @@ class ArtStylePlugin:
         if not self._styles:
             return None
 
-        available_styles = self._styles
-        if avoid_last and self._last_style and len(self._styles) > 1:
-            available_styles = [s for s in self._styles if s != self._last_style]
+        # Start with all styles as candidates
+        candidate_styles = self._styles
 
-        style = random.choice(available_styles)
-        self._last_style = style
-        return style
+        if avoid_last and self._last_style and len(self._styles) > 1:
+            # If we need to avoid the last style and there's more than one style overall,
+            # try to pick from styles that are not the last one.
+            styles_excluding_last = [s for s in self._styles if s != self._last_style]
+            if styles_excluding_last:
+                # If this filtering results in a non-empty list, these are our candidates
+                candidate_styles = styles_excluding_last
+            # If styles_excluding_last is empty, it means the only style available is the one
+            # we are trying to avoid. In this case, candidate_styles remains self._styles,
+            # so we will pick the only available style.
+
+        # At this point, candidate_styles is guaranteed not to be empty if self._styles was not empty.
+        chosen_style = random.choice(candidate_styles)
+        self._last_style = chosen_style
+        return chosen_style
 
 def get_art_style() -> str:
     """
