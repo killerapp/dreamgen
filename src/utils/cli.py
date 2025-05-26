@@ -137,6 +137,16 @@ def generate(
                         else:
                             generated_prompt = await prompt_gen.generate_prompt()
                         progress.remove_task(prompt_task)
+                        
+                        # Display thinking process
+                        if hasattr(prompt_gen, 'thinking_process') and prompt_gen.thinking_process:
+                            console.print(Panel(
+                                "\n".join([f"[dim]Thought: {think_step}[/dim]" for think_step in prompt_gen.thinking_process]),
+                                title="[cyan]Reasoning Process[/cyan]",
+                                border_style="cyan",
+                                title_align="left"
+                            ))
+                        
                         console.print(Panel(
                             f"[bold]Generated prompt:[/bold]\n\n{generated_prompt}",
                             title="AI Prompt",
@@ -291,6 +301,16 @@ def loop(
                         try:
                             # Generate prompt
                             prompt = await prompt_gen.generate_prompt()
+
+                            # Display thinking process
+                            if hasattr(prompt_gen, 'thinking_process') and prompt_gen.thinking_process:
+                                console.print(Panel(
+                                    "\n".join([f"[dim]Thought: {think_step}[/dim]" for think_step in prompt_gen.thinking_process]),
+                                    title="[cyan]Reasoning Process[/cyan]",
+                                    border_style="cyan",
+                                    title_align="left" 
+                                ))
+                            
                             console.print(Panel(
                                 f"[bold]Generated prompt for image {i+1}:[/bold]\n\n{prompt}",
                                 title=f"Prompt {i+1}/{batch_size}",
