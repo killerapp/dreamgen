@@ -35,25 +35,30 @@ class PluginManager:
             enabled=enabled,
             order=order
         )
-        self.logger.info(f"Registered plugin: {name} (enabled={enabled}, order={order})")
+        self.logger.debug(
+            "Registered plugin: %s (enabled=%s, order=%s)",
+            name,
+            enabled,
+            order,
+        )
         
     def enable_plugin(self, name: str):
         """Enable a specific plugin."""
         if name in self.plugins:
             self.plugins[name].enabled = True
-            self.logger.info(f"Enabled plugin: {name}")
+            self.logger.debug("Enabled plugin: %s", name)
             
     def disable_plugin(self, name: str):
         """Disable a specific plugin."""
         if name in self.plugins:
             self.plugins[name].enabled = False
-            self.logger.info(f"Disabled plugin: {name}")
+            self.logger.debug("Disabled plugin: %s", name)
             
     def set_plugin_order(self, name: str, order: int):
         """Set the execution order for a plugin."""
         if name in self.plugins:
             self.plugins[name].order = order
-            self.logger.info(f"Set order for plugin {name}: {order}")
+            self.logger.debug("Set order for plugin %s: %s", name, order)
             
     def execute_plugins(self) -> List[PluginResult]:
         """
