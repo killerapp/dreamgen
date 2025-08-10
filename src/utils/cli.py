@@ -22,10 +22,13 @@ from rich.table import Table
 
 from ..generators.prompt_generator import PromptGenerator
 from ..generators.image_generator import ImageGenerator
+from ..generators.mock_image_generator import MockImageGenerator
 from .storage import StorageManager
 from .config import Config
 from .metrics import MetricsCollector
 from .troubleshoot import SystemDiagnostics
+from .logging_config import setup_logging
+from .web_ui import launch_web_ui
 
 # Initialize rich console for better output
 console = Console()
@@ -57,7 +60,7 @@ def version_callback(value: bool):
 @app.callback()
 def main(
     version: bool = typer.Option(
-        False, "--version", "-v", 
+        False, "--version", "-v",
         callback=version_callback,
         help="Show version information and exit",
         is_eager=True
@@ -65,19 +68,30 @@ def main(
     config_file: Optional[Path] = typer.Option(
         None, "--config", "-c",
         help="Path to configuration file"
-    )
+    ),
+    debug: bool = typer.Option(
+        False, "--debug",
+        help="Enable verbose logging to console",
+    ),
 ):
     """
     🎨 Continuous Image Generation System
 
     Generate AI images using Ollama for prompts and Flux for image generation.
-    Run with 'uv run imagegen' followed by a command.
+    Run `uv run imagegen generate` for CLI usage or `uv run imagegen web` to
+    start the browser UI.
     """
-    if config_file:
-        if not config_file.exists():
-            console.print(f"[yellow]Warning: Config file {config_file} not found, using defaults[/yellow]")
-        else:
-            app.state.config = Config.from_file(config_file)
+    if config_file and config_file.exists():
+        app.state.config = Config.from_file(config_file)
+    else:
+        if config_file and not config_file.exists():
+            console.print(
+                f"[yellow]Warning: Config file {config_file} not found, using defaults[/yellow]"
+            )
+        app.state.config = Config()
+
+    # Configure logging after configuration is loaded
+    setup_logging(app.state.config.system.log_dir, verbose=debug)
 
 @app.command(help="Generate a single image with optional interactive prompt refinement")
 def generate(
@@ -91,7 +105,11 @@ def generate(
     ),
     mps_use_fp16: bool = typer.Option(
         False, "--mps-use-fp16",
-        help="Use float16 precision on Apple Silicon (may improve performance)"
+        help="Use float16 precision on Apple Silicon (may improve performance)",
+    ),
+    mock: bool = typer.Option(
+        False, "--mock",
+        help="Use mock image generator that saves placeholder images",
     )
 ) -> None:
     """Generate a single image using AI-generated prompts or a custom prompt."""
@@ -111,7 +129,11 @@ def generate(
                     # Initialize components
                     init_task = progress.add_task("[cyan]Initializing components...", total=None)
                     prompt_gen = PromptGenerator(app.state.config)
-                    image_gen = ImageGenerator(app.state.config)
+                    image_gen = (
+                        MockImageGenerator(app.state.config)
+                        if mock
+                        else ImageGenerator(app.state.config)
+                    )
                     storage = StorageManager()
                     metrics = MetricsCollector(app.state.config.system.log_dir / "metrics")
                     progress.remove_task(init_task)
@@ -169,7 +191,7 @@ def generate(
                     # Cleanup
                     prompt_gen.cleanup()
                     image_gen.cleanup()
-                    
+
                 except Exception as e:
                     console.print(f"[red]Error: {str(e)}[/red]")
                     raise
@@ -181,10 +203,16 @@ def generate(
         asyncio.run(_generate())
     except KeyboardInterrupt:
         print("\nOperation cancelled by user")
-        raise typer.Exit(0)
-    except Exception as e:
-        typer.echo(f"Error: {str(e)}", err=True)
-        raise typer.Exit(1)
+
+
+@app.command(help="Launch a minimal web UI for image generation")
+def web(
+    mock: bool = typer.Option(
+        False, "--mock", help="Use mock image generator instead of loading models"
+    )
+) -> None:
+    """Start the Gradio-based browser interface."""
+    launch_web_ui(app.state.config, mock=mock)
         
 @app.command(help="Run system diagnostics and troubleshooting")
 def diagnose(
@@ -249,7 +277,11 @@ def loop(
     ),
     mps_use_fp16: bool = typer.Option(
         False, "--mps-use-fp16",
-        help="Use float16 precision on Apple Silicon (may improve performance)"
+        help="Use float16 precision on Apple Silicon (may improve performance)",
+    ),
+    mock: bool = typer.Option(
+        False, "--mock",
+        help="Use mock image generator that saves placeholder images",
     )
 ) -> None:
     """Generate a batch of images with unique prompts."""
@@ -272,7 +304,11 @@ def loop(
                     # Initialize components
                     init_task = progress.add_task("[cyan]Initializing models...", total=None)
                     prompt_gen = PromptGenerator(app.state.config)
-                    image_gen = ImageGenerator(app.state.config)
+                    image_gen = (
+                        MockImageGenerator(app.state.config)
+                        if mock
+                        else ImageGenerator(app.state.config)
+                    )
                     storage = StorageManager()
                     metrics = MetricsCollector(app.state.config.system.log_dir / "metrics")
                     progress.remove_task(init_task)

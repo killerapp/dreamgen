@@ -61,14 +61,14 @@ class ImageGenerator:
         self.memory_manager = MemoryManager(self.device)
         
         if self.device == "cuda":
-            print(f"Using NVIDIA GPU: {torch.cuda.get_device_name()}")
+            logger.info("Using NVIDIA GPU: %s", torch.cuda.get_device_name())
             torch.cuda.set_device(0)
             self.memory_manager.optimize_memory_usage()
         elif self.device == "mps":
-            print(f"Using Apple Silicon GPU: {platform.processor()}")
+            logger.info("Using Apple Silicon GPU: %s", platform.processor())
             self.memory_manager.optimize_memory_usage()
         else:
-            print("WARNING: Running on CPU. This will be significantly slower.")
+            logger.warning("Running on CPU. This will be significantly slower.")
     
     def _determine_device(self, cpu_only: bool) -> Literal["cpu", "cuda", "mps"]:
         """Determine the appropriate device to use based on availability."""
@@ -85,8 +85,10 @@ class ImageGenerator:
             
         # If we got here and cpu_only is False, warn the user
         if not cpu_only:
-            print("No GPU acceleration available (neither CUDA nor MPS). "
-                  "Consider using --cpu-only flag for better error handling.")
+            logger.warning(
+                "No GPU acceleration available (neither CUDA nor MPS). "
+                "Consider using --cpu-only flag for better error handling."
+            )
             
         return "cpu"
         
@@ -141,7 +143,9 @@ class ImageGenerator:
                 except OSError as e:
                     # Check for Windows paging file error
                     if "paging file is too small" in str(e) or "os error 1455" in str(e).lower():
-                        print("\nERROR: Windows paging file is too small. Increase virtual memory in system settings and restart.")
+                        logger.error(
+                            "Windows paging file is too small. Increase virtual memory in system settings and restart."
+                        )
                     raise
                 
                 # Move model to device first if not using sequential CPU offloading
@@ -207,28 +211,31 @@ class ImageGenerator:
             # Attention slicing works on both CUDA and MPS
             logger.debug("Enabling attention slicing")
             self.pipe.enable_attention_slicing()
-            print("Enabled attention slicing")
+            logger.info("Enabled attention slicing")
             
             # VAE tiling works on both CUDA and MPS
             logger.debug("Enabling VAE tiling")
             self.pipe.enable_vae_tiling()
-            print("Enabled VAE tiling")
+            logger.info("Enabled VAE tiling")
             
             # xformers is CUDA-specific
             if self.device == "cuda":
                 try:
                     logger.debug("Attempting to enable xformers memory efficient attention")
                     self.pipe.enable_xformers_memory_efficient_attention()
-                    print("Enabled xformers memory efficient attention")
+                    logger.info("Enabled xformers memory efficient attention")
                 except Exception as xformers_error:
                     logger.warning(f"Xformers optimization not available: {str(xformers_error)}")
-                    print("Xformers optimization not available")
             
             # Print memory info if available
             allocated, reserved, total = self.memory_manager.get_gpu_memory_info()
             if total > 0:
-                logger.debug(f"GPU Memory: {allocated:.2f} GB allocated, {reserved:.2f} GB reserved (Total: {total:.2f} GB)")
-                print(f"GPU Memory: {allocated:.2f} GB allocated, {reserved:.2f} GB reserved (Total: {total:.2f} GB)")
+                logger.debug(
+                    f"GPU Memory: {allocated:.2f} GB allocated, {reserved:.2f} GB reserved (Total: {total:.2f} GB)"
+                )
+                logger.info(
+                    f"GPU Memory: {allocated:.2f} GB allocated, {reserved:.2f} GB reserved (Total: {total:.2f} GB)"
+                )
         except Exception as opt_error:
             logger.error(f"Error setting up GPU optimizations: {str(opt_error)}")
             logger.error(f"Traceback: {traceback.format_exc()}")

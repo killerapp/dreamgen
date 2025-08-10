@@ -48,6 +48,15 @@ Like electric sheep in the dreams of androids, this project explores the boundar
 
    # Force a specific prompt (bypass Ollama)
    uv run imagegen generate -p "your custom prompt here"
+
+   # Run without downloading large models (saves a placeholder image)
+   uv run imagegen generate --mock
+
+   # Enable verbose backend logging
+   uv run imagegen --debug generate
+
+   # Launch lightweight web UI (use --mock to avoid model downloads)
+   uv run imagegen web --mock
    ```
 
 ## ✨ Features
@@ -117,6 +126,7 @@ Options:
 --true-cfg FLOAT    True CFG scale (1.0-10.0)
 --cpu-only          Force CPU mode (slower but hey, it works! 🐌)
 --mps-use-fp16      Use float16 precision on Apple Silicon (may improve performance for some models)
+--mock              Use placeholder image generator (no models required)
 ```
 
 ### Generate Multiple Images
@@ -137,6 +147,14 @@ Options:
 -v, --verbose        Show detailed diagnostic information
 --check-env/--no-check-env  Check environment variables (default: True)
 --fix                Attempt to fix common issues automatically
+```
+
+### Launch Web UI
+```bash
+uv run imagegen web [OPTIONS]
+
+Options:
+--mock              Use placeholder image generator (no models required)
 ```
 
 ## 🎭 Model Variants
