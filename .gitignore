@@ -12,6 +12,10 @@ wheels/
 # Environment variables
 .env
 
+# Local settings
+settings.local.json
+.claude/settings.local.json
+
 output
 
 # Test artifacts
