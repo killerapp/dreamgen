@@ -164,7 +164,25 @@ class EnhancedWebUI:
         
         # Generate image
         output_path = self.storage.get_output_path(final_prompt)
-        image_path, prompt_used, gen_time = await generator.generate_image(final_prompt, output_path)
+        result = await generator.generate_image(final_prompt, output_path)
+        
+        # Handle both mock and real generator return formats
+        if len(result) == 3:
+            image_path, gen_time_or_second, third_value = result
+            # Check if third value is a string (model name) or float (gen_time)
+            if isinstance(third_value, str):
+                # Mock generator format: (path, gen_time, model_name)
+                gen_time = gen_time_or_second
+                prompt_used = final_prompt  # Mock doesn't change the prompt
+            else:
+                # Real generator format: (path, prompt, gen_time)
+                prompt_used = gen_time_or_second
+                gen_time = third_value
+        else:
+            # Fallback
+            image_path = result[0]
+            prompt_used = final_prompt
+            gen_time = 0.0
         
         # Clean up
         generator.cleanup()
@@ -303,8 +321,16 @@ class EnhancedWebUI:
             Configured Gradio Blocks interface
         """
         with gr.Blocks(title="Continuous Image Generator - CSO Module", theme=gr.themes.Soft()) as interface:
-            gr.Markdown("# 🎨 Continuous Image Generator")
-            gr.Markdown("AI-powered image generation system with plugin architecture")
+            with gr.Row():
+                with gr.Column():
+                    gr.Markdown("# 🎨 Continuous Image Generator")
+                    gr.Markdown("AI-powered image generation system with plugin architecture")
+                with gr.Column(scale=0):
+                    gr.Markdown(
+                        """<div style="text-align: right; padding-top: 10px;">
+                        <small>by <a href="https://agenticinsights.com" target="_blank" style="color: #2563eb; text-decoration: none;">Agentic Insights</a></small>
+                        </div>"""
+                    )
             
             with gr.Tabs():
                 # Single Generation Tab
@@ -489,6 +515,21 @@ class EnhancedWebUI:
                     status_display,
                     stats_display
                 ]
+            )
+            
+            # Footer
+            gr.Markdown(
+                """
+                ---
+                <div style="text-align: center; padding: 20px; color: #6b7280;">
+                <small>
+                Continuous Image Generator v1.0.0 | Part of CloudStack Orchestrator<br>
+                Built with ❤️ by <a href="https://agenticinsights.com" target="_blank" style="color: #2563eb;">Agentic Insights</a> | 
+                <a href="https://github.com/killerapp/continuous-image-gen" target="_blank" style="color: #2563eb;">GitHub</a> | 
+                <a href="https://agenticinsights.com/blog" target="_blank" style="color: #2563eb;">Blog</a>
+                </small>
+                </div>
+                """
             )
         
         return interface
