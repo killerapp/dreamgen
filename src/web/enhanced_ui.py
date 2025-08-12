@@ -523,7 +523,8 @@ class EnhancedWebUI:
                 ---
                 <div style="text-align: center; padding: 20px; color: #6b7280;">
                 <small>
-                Continuous Image Generator v1.0.0 | Part of CloudStack Orchestrator<br>
+                Continuous Image Generator v1.0.0 | Reference Implementation for Diffusion Model Systems<br>
+                Demonstrating Enterprise AI/ML Capabilities in Computer Vision & Generative AI<br>
                 Built with ❤️ by <a href="https://agenticinsights.com" target="_blank" style="color: #2563eb;">Agentic Insights</a> | 
                 <a href="https://github.com/killerapp/continuous-image-gen" target="_blank" style="color: #2563eb;">GitHub</a> | 
                 <a href="https://agenticinsights.com/blog" target="_blank" style="color: #2563eb;">Blog</a>
