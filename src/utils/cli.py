@@ -29,6 +29,7 @@ from .metrics import MetricsCollector
 from .troubleshoot import SystemDiagnostics
 from .logging_config import setup_logging
 from .web_ui import launch_web_ui
+from ..web.enhanced_ui import EnhancedWebUI
 
 # Initialize rich console for better output
 console = Console()
@@ -205,14 +206,49 @@ def generate(
         print("\nOperation cancelled by user")
 
 
-@app.command(help="Launch a minimal web UI for image generation")
+@app.command(help="Launch a web UI for image generation")
 def web(
     mock: bool = typer.Option(
         False, "--mock", help="Use mock image generator instead of loading models"
+    ),
+    enhanced: bool = typer.Option(
+        False, "--enhanced", help="Use enhanced UI with gallery and controls"
+    ),
+    port: int = typer.Option(
+        7860, "--port", help="Port to run the web server on"
+    ),
+    share: bool = typer.Option(
+        False, "--share", help="Create a public Gradio link"
     )
 ) -> None:
-    """Start the Gradio-based browser interface."""
-    launch_web_ui(app.state.config, mock=mock)
+    """Start the Gradio-based browser interface.
+    
+    Examples:
+        # Launch basic UI in mock mode
+        imagegen web --mock
+        
+        # Launch enhanced UI with gallery
+        imagegen web --enhanced --mock
+        
+        # Launch enhanced UI on custom port
+        imagegen web --enhanced --port 8080
+    """
+    if enhanced:
+        console.print("[bold cyan]Launching Enhanced Web UI...[/bold cyan]")
+        console.print(f"   Mode: {'Mock (Testing)' if mock else 'Production'}")
+        console.print(f"   Port: {port}")
+        console.print(f"   Share: {'Enabled' if share else 'Disabled'}")
+        
+        ui = EnhancedWebUI(app.state.config, mock=mock)
+        interface = ui.create_interface()
+        
+        console.print("\n[bold green]Enhanced Web UI is starting...[/bold green]")
+        console.print("[dim]Press Ctrl+C to stop the server[/dim]\n")
+        
+        interface.launch(share=share, server_port=port, server_name="0.0.0.0")
+    else:
+        console.print("[bold cyan]Launching Basic Web UI...[/bold cyan]")
+        launch_web_ui(app.state.config, mock=mock)
         
 @app.command(help="Run system diagnostics and troubleshooting")
 def diagnose(

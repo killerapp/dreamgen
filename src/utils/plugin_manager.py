@@ -53,6 +53,12 @@ class PluginManager:
         if name in self.plugins:
             self.plugins[name].enabled = False
             self.logger.debug("Disabled plugin: %s", name)
+    
+    def is_enabled(self, name: str) -> bool:
+        """Check if a plugin is enabled."""
+        if name in self.plugins:
+            return self.plugins[name].enabled
+        return False
             
     def set_plugin_order(self, name: str, order: int):
         """Set the execution order for a plugin."""

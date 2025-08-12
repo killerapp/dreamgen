@@ -15,7 +15,7 @@ from PIL import Image
 from ..generators.image_generator import ImageGenerator
 from ..generators.mock_image_generator import MockImageGenerator
 from ..generators.prompt_generator import PromptGenerator
-from ..plugins.plugin_manager import PluginManager
+from ..utils.plugin_manager import PluginManager
 from ..utils.config import Config
 from ..utils.storage import StorageManager
 
@@ -33,13 +33,57 @@ class EnhancedWebUI:
         self.config = config
         self.mock = mock
         self.storage = StorageManager(str(config.system.output_dir))
-        self.plugin_manager = PluginManager(config)
+        self.plugin_manager = PluginManager()
         self.generator_cls = MockImageGenerator if mock else ImageGenerator
         self.is_generating = False
         self.generation_task: Optional[asyncio.Task] = None
         self.generation_history: List[Dict[str, Any]] = []
         self.max_history = 100
         
+        # Register available plugins
+        self._register_plugins()
+    
+    def _register_plugins(self):
+        """Register available plugins with the plugin manager."""
+        # Import plugins
+        from ..plugins.time_of_day import get_time_of_day
+        from ..plugins.art_style import get_art_style
+        from ..plugins.nearest_holiday import get_nearest_holiday
+        
+        # Register each plugin with wrapper functions that return context strings
+        def time_context_wrapper():
+            time_of_day = get_time_of_day()
+            return f"Time of day: {time_of_day.description}"
+        
+        def holiday_context_wrapper():
+            holiday = get_nearest_holiday()
+            return f"Holiday context: {holiday}" if holiday else None
+        
+        # Register each plugin
+        self.plugin_manager.register(
+            "time_context",
+            "Adds time of day context",
+            time_context_wrapper,
+            enabled=True,
+            order=1
+        )
+        
+        self.plugin_manager.register(
+            "art_style",
+            "Adds random art style",
+            get_art_style,
+            enabled=True,
+            order=2
+        )
+        
+        self.plugin_manager.register(
+            "holiday_context",
+            "Adds nearest holiday context",
+            holiday_context_wrapper,
+            enabled=True,
+            order=3
+        )
+    
     def get_recent_images(self, limit: int = 20) -> List[Tuple[str, str, str]]:
         """Get recent generated images from storage.
         
@@ -113,7 +157,7 @@ class EnhancedWebUI:
         final_prompt = prompt
         if enhance_prompt and not self.mock:
             try:
-                prompt_gen = PromptGenerator(self.config, self.plugin_manager)
+                prompt_gen = PromptGenerator(self.config)
                 final_prompt = await prompt_gen.generate_prompt(base_prompt=prompt)
             except Exception as e:
                 print(f"Prompt enhancement failed: {e}")
@@ -436,10 +480,12 @@ class EnhancedWebUI:
                 )
             
             # Load initial data
+            gallery_data, details_data = refresh_gallery()
             interface.load(
-                lambda: (refresh_gallery(), self.get_system_status(), get_statistics()),
+                lambda: (gallery_data, details_data, self.get_system_status(), get_statistics()),
                 outputs=[
-                    [gallery, gallery_info],
+                    gallery,
+                    gallery_info,
                     status_display,
                     stats_display
                 ]
