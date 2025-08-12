@@ -1,0 +1,29 @@
+apiVersion: v2
+name: continuous-image-gen
+description: AI-powered continuous image generation system - CloudStack Orchestrator Module
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+home: https://github.com/killerapp/continuous-image-gen
+sources:
+  - https://github.com/killerapp/continuous-image-gen
+maintainers:
+  - name: killerapp
+    email: support@killerapp.com
+keywords:
+  - ai
+  - image-generation
+  - flux
+  - cso-module
+  - cloudstack-orchestrator
+icon: https://raw.githubusercontent.com/killerapp/continuous-image-gen/main/icon.png
+annotations:
+  cso.platform/module-tier: custom
+  cso.platform/module-version: v1alpha1
+dependencies:
+  - name: postgresql
+    version: "12.x.x"
+    repository: https://charts.bitnami.com/bitnami
+    condition: database.enabled
+    tags:
+      - database
