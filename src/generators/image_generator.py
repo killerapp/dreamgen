@@ -240,6 +240,27 @@ class ImageGenerator:
             logger.error(f"Error setting up GPU optimizations: {str(opt_error)}")
             logger.error(f"Traceback: {traceback.format_exc()}")
 
+    async def generate(self, prompt: str, seed: Optional[int] = None) -> Image.Image:
+        """Generate an image and return it as PIL Image for API compatibility.
+        
+        Args:
+            prompt: The prompt to generate from
+            seed: Optional random seed for reproducibility
+            
+        Returns:
+            PIL Image object
+        """
+        # Create a temporary path for the image
+        from ..utils.storage import StorageManager
+        storage = StorageManager()
+        output_path = storage.get_output_path(prompt)
+        
+        # Generate the image using the existing method
+        await self.generate_image(prompt, output_path, force_reinit=False)
+        
+        # Load and return the image
+        return Image.open(output_path)
+    
     @handle_errors(error_type=ModelError, retries=1, cleanup_func=lambda: self.memory_manager.optimize_memory_usage())
     async def generate_image(self, prompt: str, output_path: Path, force_reinit: bool = False) -> Tuple[Path, float, str]:
         """Generate an image from the given prompt."""

@@ -5,8 +5,7 @@ description = "Continuous image generation system using Ollama for prompts and F
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-    "torch>=2.0.0", # Will be installed with CUDA support via pip extra
-    "torchvision>=0.15.0",
+    # PyTorch with CUDA will be installed separately
     "transformers>=4.30.0",
     "diffusers>=0.29.0",
     "Pillow>=10.0.0",
@@ -20,7 +19,11 @@ dependencies = [
     "sentencepiece>=0.2.0",
     "peft>=0.7.0", # Required for Lora support
     "safetensors>=0.4.2", # Required for loading Lora weights
-    "gradio>=5.42.0",
+    "fastapi>=0.100.0",
+    "uvicorn[standard]>=0.23.0",
+    "python-multipart>=0.0.6",
+    "websockets>=12.0",
+    "aiofiles>=23.0.0",
 ]
 
 [project.optional-dependencies]
@@ -58,3 +61,4 @@ disable = ["C0111", "C0103"]
 asyncio_mode = "auto"
 testpaths = ["tests"]
 python_files = ["test_*.py"]
+

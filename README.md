@@ -4,6 +4,8 @@ A Python application that continuously generates creative images using AI. It us
 
 Like electric sheep in the dreams of androids, this project explores the boundaries between human and artificial creativity. What does AI imagine when we let it dream? 🌠
 
+Built by [Agentic Insights](https://agenticinsights.com)
+
 ![Do androids dream of electric sheep?](https://host-image.agentic.workers.dev/)
 
 ## 🔑 Key Benefits
@@ -33,6 +35,12 @@ Like electric sheep in the dreams of androids, this project explores the boundar
    
    # Install dependencies
    uv sync
+   
+   # For NVIDIA GPU support (CUDA), install PyTorch separately:
+   uv pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu124
+   
+   # Note: uv sync may revert PyTorch to CPU version. After running uv sync,
+   # always reinstall PyTorch with CUDA if you have an NVIDIA GPU.
    ```
 
 3. Let the magic happen! ✨
@@ -54,13 +62,34 @@ Like electric sheep in the dreams of androids, this project explores the boundar
 
    # Enable verbose backend logging
    uv run imagegen --debug generate
+   ```
 
-   # Launch lightweight web UI (use --mock to avoid model downloads)
-   uv run imagegen web --mock
+4. Launch the modern web interface:
+   ```bash
+   # Start the FastAPI backend
+   uv run uvicorn src.api.server:app --reload --port 8000
+   
+   # In a new terminal, start the Next.js frontend
+   cd web-ui
+   npm install
+   npm run dev
+   
+   # Open http://localhost:7860 in your browser
    ```
 
 ## ✨ Features
 
+- **Modern Web Interface**:
+  - IDE-style dark theme with VS Code aesthetics
+  - Real-time generation with WebSocket updates
+  - Plugin management interface
+  - Gallery view for browsing generated images
+  - Built with Next.js, TypeScript, and Tailwind CSS
+- **RESTful API with FastAPI**:
+  - Full REST API for programmatic access
+  - WebSocket support for real-time updates
+  - Batch generation endpoints
+  - Plugin management API
 - **Powerful Plugin System** for dynamic prompt enhancement:
   - Time of day context (morning/afternoon/evening/night)
   - Holiday detection and theming (because every day is special 🎉)
