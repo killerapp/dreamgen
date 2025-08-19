@@ -18,7 +18,7 @@ uv run imagegen loop --batch-size 10 --interval 300
 # Mock mode (no model downloads, placeholder images)
 uv run imagegen generate --mock
 
-# Launch web UI (Gradio interface)
+# Launch web UI (Next.js interface)
 uv run imagegen web --mock
 ```
 
@@ -87,7 +87,7 @@ This is a Python-based AI image generation system with the following architectur
 - **Flux transformers** for image generation (dev/schnell models)
 - **Ollama** for local LLM prompt generation
 - **PyTorch** with CUDA (NVIDIA) and MPS (Apple Silicon) support
-- **Gradio** for web UI
+- **Next.js** for web UI
 - **Cloudflare Workers** (optional host-image feature)
 
 ### Important Implementation Details
