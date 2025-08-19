@@ -6,23 +6,21 @@ Provides REST API and WebSocket endpoints for the Next.js frontend
 import asyncio
 import json
 import logging
-import os
 import uuid
 from datetime import datetime
 from pathlib import Path
-from typing import Optional, List, Dict, Any
+from typing import Any, Dict, List, Optional
 
-from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect, UploadFile, File
+import aiofiles
+from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
-import aiofiles
 
+from src.generators.mock_image_generator import MockImageGenerator
+from src.generators.prompt_generator import PromptGenerator
 from src.utils.config import Config
 from src.utils.plugin_manager import PluginManager
-from src.generators.prompt_generator import PromptGenerator
-from src.generators.mock_image_generator import MockImageGenerator
 from src.utils.storage import save_image_and_prompt
 
 # Configure logging
@@ -55,9 +53,7 @@ app.add_middleware(
 # Global state
 config = Config()
 plugin_manager = PluginManager()
-state = {
-    "use_mock": False  # Use real Flux generation with GPU
-}
+state = {"use_mock": False}  # Use real Flux generation with GPU
 
 # Register plugins - simplified for now
 # TODO: Properly integrate plugins once their interfaces are standardized
@@ -73,27 +69,34 @@ app.mount("/images", StaticFiles(directory=str(OUTPUT_DIR)), name="images")
 # Pydantic models
 class GenerateRequest(BaseModel):
     """Request model for image generation"""
+
     prompt: Optional[str] = Field(None, description="Optional custom prompt")
     use_mock: bool = Field(False, description="Use mock generator for testing")
     enable_plugins: bool = Field(True, description="Enable plugin enhancements")
     seed: Optional[int] = Field(None, description="Random seed for reproducibility")
-    
+
+
 class GenerateResponse(BaseModel):
     """Response model for image generation"""
+
     id: str = Field(..., description="Unique generation ID")
     prompt: str = Field(..., description="Final prompt used")
     image_path: str = Field(..., description="Path to generated image")
     metadata: Dict[str, Any] = Field(default_factory=dict, description="Generation metadata")
     created_at: str = Field(..., description="ISO timestamp")
 
+
 class PluginInfo(BaseModel):
     """Plugin information model"""
+
     name: str
     enabled: bool
     description: str
-    
+
+
 class SystemStatus(BaseModel):
     """System status model"""
+
     status: str = Field(..., description="System status (ready, busy, error)")
     backend: str = Field(..., description="Active backend (mock, flux)")
     plugins_enabled: bool
@@ -126,6 +129,7 @@ class ConnectionManager:
             except:
                 pass  # Handle disconnected clients
 
+
 manager = ConnectionManager()
 
 
@@ -137,8 +141,9 @@ async def root():
         "name": "Continuous Image Generator API",
         "version": "1.0.0",
         "docs": "/api/docs",
-        "by": "Agentic Insights"
+        "by": "Agentic Insights",
     }
+
 
 @app.get("/api/status", response_model=SystemStatus)
 async def get_status():
@@ -146,17 +151,19 @@ async def get_status():
     # Check if CUDA/MPS is available
     try:
         import torch
+
         gpu_available = torch.cuda.is_available() or torch.backends.mps.is_available()
     except:
         gpu_available = False
-    
+
     # Check Ollama availability
     try:
         import ollama
+
         ollama_available = True
     except:
         ollama_available = False
-    
+
     # Determine which Flux model is being used
     if state["use_mock"]:
         backend_name = "mock"
@@ -168,125 +175,139 @@ async def get_status():
             backend_name = "flux-dev"
         else:
             backend_name = "flux"
-    
+
     return SystemStatus(
         status="ready",
         backend=backend_name,
         plugins_enabled=True,
         active_plugins=[name for name, info in plugin_manager.plugins.items() if info.enabled],
         gpu_available=gpu_available,
-        ollama_available=ollama_available
+        ollama_available=ollama_available,
     )
+
 
 @app.get("/api/plugins", response_model=List[PluginInfo])
 async def get_plugins():
     """Get list of available plugins and their states"""
     plugins = []
     for name, info in plugin_manager.plugins.items():
-        plugins.append(PluginInfo(
-            name=name,
-            enabled=info.enabled,
-            description=info.description
-        ))
+        plugins.append(PluginInfo(name=name, enabled=info.enabled, description=info.description))
     return plugins
+
 
 @app.post("/api/plugins/{plugin_name}/toggle")
 async def toggle_plugin(plugin_name: str):
     """Toggle a plugin on/off"""
     if plugin_name not in plugin_manager.plugins:
         raise HTTPException(status_code=404, detail=f"Plugin '{plugin_name}' not found")
-    
+
     current_state = plugin_manager.is_enabled(plugin_name)
     if current_state:
         plugin_manager.disable_plugin(plugin_name)
     else:
         plugin_manager.enable_plugin(plugin_name)
-    
+
     return {"plugin": plugin_name, "enabled": not current_state}
+
 
 @app.post("/api/generate", response_model=GenerateResponse)
 async def generate_image(request: GenerateRequest):
     """Generate a single image"""
     generation_id = str(uuid.uuid4())
-    
+
     try:
         # Broadcast start event
-        await manager.broadcast(json.dumps({
-            "type": "generation_started",
-            "id": generation_id,
-            "timestamp": datetime.now().isoformat()
-        }))
-        
+        await manager.broadcast(
+            json.dumps(
+                {
+                    "type": "generation_started",
+                    "id": generation_id,
+                    "timestamp": datetime.now().isoformat(),
+                }
+            )
+        )
+
         # Generate prompt if not provided
         if request.prompt:
             final_prompt = request.prompt
         else:
             prompt_gen = PromptGenerator(config)
             final_prompt = await prompt_gen.generate_prompt()
-            
+
             # Broadcast prompt generated event
-            await manager.broadcast(json.dumps({
-                "type": "prompt_generated",
-                "id": generation_id,
-                "prompt": final_prompt
-            }))
-        
+            await manager.broadcast(
+                json.dumps(
+                    {"type": "prompt_generated", "id": generation_id, "prompt": final_prompt}
+                )
+            )
+
         # Generate image
-        logger.info(f"Generation mode - request.use_mock: {request.use_mock}, state['use_mock']: {state['use_mock']}")
-        
+        logger.info(
+            f"Generation mode - request.use_mock: {request.use_mock}, state['use_mock']: {state['use_mock']}"
+        )
+
         if request.use_mock or state["use_mock"]:
             logger.info("Using MOCK image generator")
             image_gen = MockImageGenerator(config)
         else:
             logger.info("Using REAL Flux image generator")
-            
+
             # Broadcast model loading event
-            await manager.broadcast(json.dumps({
-                "type": "model_loading",
-                "id": generation_id,
-                "message": "Loading Flux model (this may take several minutes on first run)..."
-            }))
-            
+            await manager.broadcast(
+                json.dumps(
+                    {
+                        "type": "model_loading",
+                        "id": generation_id,
+                        "message": "Loading Flux model (this may take several minutes on first run)...",
+                    }
+                )
+            )
+
             # Import real generator only if needed
             from src.generators.image_generator import ImageGenerator
+
             try:
                 image_gen = ImageGenerator(config)
             except MemoryError as e:
                 error_msg = "Insufficient memory to load Flux model. This model requires significant RAM/VRAM."
                 logger.error(f"Memory error loading Flux model: {str(e)}")
-                await manager.broadcast(json.dumps({
-                    "type": "generation_error",
-                    "id": generation_id,
-                    "error": error_msg
-                }))
+                await manager.broadcast(
+                    json.dumps(
+                        {"type": "generation_error", "id": generation_id, "error": error_msg}
+                    )
+                )
                 raise HTTPException(status_code=507, detail=error_msg)
             except Exception as e:
                 error_msg = f"Failed to load Flux model: {str(e)}"
                 logger.error(error_msg)
-                await manager.broadcast(json.dumps({
-                    "type": "generation_error",
-                    "id": generation_id,
-                    "error": error_msg
-                }))
+                await manager.broadcast(
+                    json.dumps(
+                        {"type": "generation_error", "id": generation_id, "error": error_msg}
+                    )
+                )
                 raise HTTPException(status_code=500, detail=error_msg)
-        
+
         # Generate the image
         image = await image_gen.generate(final_prompt, seed=request.seed)
-        
+
         # Save image and prompt
         image_path = save_image_and_prompt(image, final_prompt)
-        
+
         # Create relative path for API response
         relative_path = f"/images/{image_path.relative_to(OUTPUT_DIR).as_posix()}"
-        
+
         # Broadcast completion event
-        await manager.broadcast(json.dumps({
-            "type": "generation_completed",
-            "id": generation_id,
-            "image_path": relative_path,
-            "prompt": final_prompt
-        }))
-        
+        await manager.broadcast(
+            json.dumps(
+                {
+                    "type": "generation_completed",
+                    "id": generation_id,
+                    "image_path": relative_path,
+                    "prompt": final_prompt,
+                }
+            )
+        )
+
         # Determine backend name
         if request.use_mock or state["use_mock"]:
             backend_name = "mock"
@@ -298,46 +319,43 @@ async def generate_image(request: GenerateRequest):
                 backend_name = "flux-dev"
             else:
                 backend_name = "flux"
-        
+
         return GenerateResponse(
             id=generation_id,
             prompt=final_prompt,
             image_path=relative_path,
             metadata={
                 "backend": backend_name,
-                "plugins_used": [name for name, info in plugin_manager.plugins.items() if info.enabled],
-                "seed": request.seed
+                "plugins_used": [
+                    name for name, info in plugin_manager.plugins.items() if info.enabled
+                ],
+                "seed": request.seed,
             },
-            created_at=datetime.now().isoformat()
+            created_at=datetime.now().isoformat(),
         )
-        
+
     except Exception as e:
         logger.error(f"Generation failed: {str(e)}")
-        
+
         # Broadcast error event
-        await manager.broadcast(json.dumps({
-            "type": "generation_error",
-            "id": generation_id,
-            "error": str(e)
-        }))
-        
+        await manager.broadcast(
+            json.dumps({"type": "generation_error", "id": generation_id, "error": str(e)})
+        )
+
         raise HTTPException(status_code=500, detail=str(e))
+
 
 @app.get("/api/gallery")
 async def get_gallery(limit: int = 50, offset: int = 0):
     """Get list of generated images"""
     images = []
-    
+
     # Get all image files from output directory
-    image_files = sorted(
-        OUTPUT_DIR.glob("**/*.png"),
-        key=lambda x: x.stat().st_mtime,
-        reverse=True
-    )
-    
+    image_files = sorted(OUTPUT_DIR.glob("**/*.png"), key=lambda x: x.stat().st_mtime, reverse=True)
+
     # Apply pagination
-    paginated_files = image_files[offset:offset + limit]
-    
+    paginated_files = image_files[offset : offset + limit]
+
     for image_file in paginated_files:
         # Check if corresponding prompt file exists
         prompt_file = image_file.with_suffix(".txt")
@@ -345,36 +363,39 @@ async def get_gallery(limit: int = 50, offset: int = 0):
         if prompt_file.exists():
             async with aiofiles.open(prompt_file, "r") as f:
                 prompt = await f.read()
-        
-        images.append({
-            "path": f"/images/{image_file.relative_to(OUTPUT_DIR).as_posix()}",
-            "prompt": prompt.strip(),
-            "created_at": datetime.fromtimestamp(image_file.stat().st_mtime).isoformat(),
-            "size": image_file.stat().st_size
-        })
-    
-    return {
-        "images": images,
-        "total": len(image_files),
-        "limit": limit,
-        "offset": offset
-    }
+
+        images.append(
+            {
+                "path": f"/images/{image_file.relative_to(OUTPUT_DIR).as_posix()}",
+                "prompt": prompt.strip(),
+                "created_at": datetime.fromtimestamp(image_file.stat().st_mtime).isoformat(),
+                "size": image_file.stat().st_size,
+            }
+        )
+
+    return {"images": images, "total": len(image_files), "limit": limit, "offset": offset}
+
 
 @app.delete("/api/gallery/{image_path:path}")
 async def delete_image(image_path: str):
     """Delete an image from the gallery"""
-    full_path = OUTPUT_DIR / image_path
-    
+    full_path = (OUTPUT_DIR / image_path).resolve()
+    output_root = OUTPUT_DIR.resolve()
+
+    if not full_path.is_relative_to(output_root):
+        raise HTTPException(status_code=400, detail="Invalid image path")
+
     if not full_path.exists():
         raise HTTPException(status_code=404, detail="Image not found")
-    
+
     # Delete image and prompt files
     full_path.unlink()
     prompt_path = full_path.with_suffix(".txt")
     if prompt_path.exists():
         prompt_path.unlink()
-    
+
     return {"message": "Image deleted successfully"}
+
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
@@ -384,25 +405,26 @@ async def websocket_endpoint(websocket: WebSocket):
         while True:
             # Keep connection alive and handle incoming messages
             data = await websocket.receive_text()
-            
+
             # Echo back or handle commands
             message = json.loads(data)
             if message.get("type") == "ping":
                 await websocket.send_text(json.dumps({"type": "pong"}))
-            
+
     except WebSocketDisconnect:
         manager.disconnect(websocket)
+
 
 @app.post("/api/batch")
 async def batch_generate(count: int = 5, delay: int = 0):
     """Generate multiple images in batch"""
     batch_id = str(uuid.uuid4())
     results = []
-    
+
     for i in range(count):
         if delay > 0 and i > 0:
             await asyncio.sleep(delay)
-        
+
         try:
             # Generate each image
             request = GenerateRequest(use_mock=state["use_mock"])
@@ -411,22 +433,12 @@ async def batch_generate(count: int = 5, delay: int = 0):
         except Exception as e:
             logger.error(f"Batch generation {i+1}/{count} failed: {str(e)}")
             results.append({"error": str(e)})
-    
-    return {
-        "batch_id": batch_id,
-        "count": count,
-        "results": results
-    }
+
+    return {"batch_id": batch_id, "count": count, "results": results}
 
 
 if __name__ == "__main__":
     import uvicorn
-    
+
     # Run the server
-    uvicorn.run(
-        "src.api.server:app",
-        host="0.0.0.0",
-        port=8000,
-        reload=True,
-        log_level="info"
-    )
+    uvicorn.run("src.api.server:app", host="0.0.0.0", port=8000, reload=True, log_level="info")
