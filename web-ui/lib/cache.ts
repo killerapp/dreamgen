@@ -1,7 +1,7 @@
 // IndexedDB cache for gallery data with 24-hour TTL
 
-interface CachedData {
-  data: any;
+interface CachedData<T = unknown> {
+  data: T;
   timestamp: number;
   key: string;
 }
@@ -41,10 +41,10 @@ class GalleryCache {
     });
   }
 
-  async get(key: string): Promise<any | null> {
+  async get<T = unknown>(key: string): Promise<T | null> {
     await this.init();
     
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       if (!this.db) {
         resolve(null);
         return;
@@ -55,7 +55,7 @@ class GalleryCache {
       const request = store.get(key);
 
       request.onsuccess = () => {
-        const result = request.result as CachedData | undefined;
+        const result = request.result as CachedData<T> | undefined;
         
         if (!result) {
           resolve(null);
@@ -81,10 +81,10 @@ class GalleryCache {
     });
   }
 
-  async set(key: string, data: any): Promise<void> {
+  async set<T = unknown>(key: string, data: T): Promise<void> {
     await this.init();
 
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       if (!this.db) {
         resolve();
         return;
@@ -93,7 +93,7 @@ class GalleryCache {
       const transaction = this.db.transaction([this.storeName], 'readwrite');
       const store = transaction.objectStore(this.storeName);
       
-      const cacheData: CachedData = {
+      const cacheData: CachedData<T> = {
         key,
         data,
         timestamp: Date.now()

@@ -28,20 +28,24 @@ export default function Home() {
 
     // Connect WebSocket for real-time updates
     api.connectWebSocket((data) => {
-      if (data.type === 'generation_started') {
-        addLog(`Generation started: ${data.id}`);
-      } else if (data.type === 'prompt_generated') {
-        addLog(`Prompt: ${data.prompt}`);
-      } else if (data.type === 'model_loading') {
-        addLog(`Loading model: ${data.message}`);
-        setGenerationStatus("Loading Flux model...");
-      } else if (data.type === 'generation_completed') {
-        addLog(`Image generated: ${data.image_path}`);
-        setGenerationStatus("");
-      } else if (data.type === 'generation_error') {
-        addLog(`Error: ${data.error}`, 'error');
-        setGenerationStatus("");
-        setIsGenerating(false);
+      // Type guard for websocket data
+      if (typeof data === 'object' && data !== null && 'type' in data) {
+        const msg = data as Record<string, unknown>;
+        if (msg.type === 'generation_started') {
+          addLog(`Generation started: ${msg.id}`);
+        } else if (msg.type === 'prompt_generated') {
+          addLog(`Prompt: ${msg.prompt}`);
+        } else if (msg.type === 'model_loading') {
+          addLog(`Loading model: ${msg.message}`);
+          setGenerationStatus("Loading Flux model...");
+        } else if (msg.type === 'generation_completed') {
+          addLog(`Image generated: ${msg.image_path}`);
+          setGenerationStatus("");
+        } else if (msg.type === 'generation_error') {
+          addLog(`Error: ${msg.error}`, 'error');
+          setGenerationStatus("");
+          setIsGenerating(false);
+        }
       }
     });
 
@@ -72,8 +76,8 @@ export default function Home() {
       
       // Clear gallery cache when new image is generated
       await galleryCache.clear();
-    } catch (error: any) {
-      const errorMsg = error?.message || String(error);
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : String(error);
       addLog(`Generation failed: ${errorMsg}`, 'error');
       setGenerationStatus("");
       if (errorMsg.includes("memory") || errorMsg.includes("Memory")) {

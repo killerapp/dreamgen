@@ -88,9 +88,9 @@ export class ImageGenAPI {
       
       if (!response.ok) throw new Error('Failed to get gallery');
       return response.json();
-    } catch (error: any) {
+    } catch (error) {
       clearTimeout(timeoutId);
-      if (error.name === 'AbortError') {
+      if (error instanceof Error && error.name === 'AbortError') {
         throw new Error('Gallery request timed out');
       }
       throw error;
@@ -105,7 +105,7 @@ export class ImageGenAPI {
     return response.json();
   }
 
-  connectWebSocket(onMessage: (data: any) => void): void {
+  connectWebSocket(onMessage: (data: unknown) => void): void {
     const wsUrl = this.baseUrl.replace('http://', 'ws://').replace('https://', 'wss://');
     
     try {
@@ -154,7 +154,7 @@ export class ImageGenAPI {
     }
   }
 
-  sendWebSocketMessage(message: any): void {
+  sendWebSocketMessage(message: unknown): void {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       this.ws.send(JSON.stringify(message));
     }

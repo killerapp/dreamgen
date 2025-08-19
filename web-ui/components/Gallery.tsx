@@ -58,7 +58,7 @@ export default function Gallery() {
       const cacheKey = `gallery_${viewMode}_${page}_${viewMode === "all" ? imagesPerPage : 200}`;
       
       // Try to get from cache first
-      const cachedData = await galleryCache.get(cacheKey);
+      const cachedData = await galleryCache.get<GalleryResponse>(cacheKey);
       
       if (cachedData) {
         console.log('Loading gallery from cache');
@@ -98,7 +98,7 @@ export default function Gallery() {
       // Try to load from cache even if API fails
       try {
         const cacheKey = `gallery_${viewMode}_${page}_${viewMode === "all" ? imagesPerPage : 200}`;
-        const cachedData = await galleryCache.get(cacheKey);
+        const cachedData = await galleryCache.get<GalleryResponse>(cacheKey);
         
         if (cachedData) {
           console.log('API failed, using cached data');
