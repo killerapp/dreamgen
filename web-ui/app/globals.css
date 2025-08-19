@@ -1,0 +1,87 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 224 71% 4%;
+    --card: 0 0% 100%;
+    --card-foreground: 224 71% 4%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 224 71% 4%;
+    --primary: 158 64% 52%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 220 14% 96%;
+    --secondary-foreground: 224 71% 4%;
+    --muted: 220 14% 96%;
+    --muted-foreground: 220 8.9% 46.1%;
+    --accent: 195 95% 50%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 158 64% 52%;
+    --radius: 0.5rem;
+  }
+ 
+  .dark {
+    /* Agentic Insights Terminal Theme */
+    --background: 229 39% 7%;     /* Deep blue-black */
+    --foreground: 120 100% 93%;   /* Terminal green-white */
+    --card: 229 33% 10%;
+    --card-foreground: 120 50% 90%;
+    --popover: 229 35% 9%;
+    --popover-foreground: 120 60% 85%;
+    --primary: 120 100% 63%;      /* Bright terminal green */
+    --primary-foreground: 229 39% 7%;
+    --secondary: 39 100% 50%;     /* Amber/orange */
+    --secondary-foreground: 229 39% 7%;
+    --muted: 229 30% 12%;
+    --muted-foreground: 120 20% 75%;
+    --accent: 180 100% 50%;       /* Terminal cyan */
+    --accent-foreground: 229 39% 7%;
+    --destructive: 0 85% 50%;
+    --destructive-foreground: 120 100% 93%;
+    --border: 120 30% 25%;
+    --input: 229 30% 15%;
+    --ring: 120 100% 63%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Custom scrollbar */
+@layer components {
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-background;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-primary/20 hover:bg-primary/30;
+    border-radius: 4px;
+  }
+  
+  /* Hide scrollbar for specific elements */
+  .scrollbar-none {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+}

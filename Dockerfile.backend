@@ -1,0 +1,77 @@
+# Backend Dockerfile using UV package manager
+# No base Python - UV provides its own embedded Python
+FROM ghcr.io/astral-sh/uv:0.5.14-python3.11-bookworm-slim AS builder
+
+# Set working directory
+WORKDIR /app
+
+# Install system dependencies required for the application
+RUN apt-get update && apt-get install -y \
+    git \
+    curl \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy dependency files first for better caching
+COPY pyproject.toml uv.lock ./
+
+# Create virtual environment and install dependencies
+# UV will handle Python and all dependencies
+RUN uv venv /opt/venv && \
+    uv pip install --python /opt/venv/bin/python --system -r pyproject.toml
+
+# Production stage
+FROM ghcr.io/astral-sh/uv:0.5.14-python3.11-bookworm-slim
+
+# Install runtime dependencies
+RUN apt-get update && apt-get install -y \
+    git \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create non-root user for security
+RUN useradd -m -u 1000 appuser
+
+WORKDIR /app
+
+# Copy virtual environment from builder
+COPY --from=builder --chown=appuser:appuser /opt/venv /opt/venv
+
+# Copy application code
+COPY --chown=appuser:appuser src/ ./src/
+COPY --chown=appuser:appuser data/ ./data/
+COPY --chown=appuser:appuser pyproject.toml uv.lock ./
+
+# Create necessary directories with proper permissions
+RUN mkdir -p /app/output /app/models /app/logs && \
+    chown -R appuser:appuser /app
+
+# Switch to non-root user
+USER appuser
+
+# Set environment variables
+ENV PATH="/opt/venv/bin:$PATH"
+ENV PYTHONPATH="/app:$PYTHONPATH"
+ENV UV_SYSTEM_PYTHON=1
+
+# Default to mock mode in container (no GPU required)
+ENV USE_MOCK_GENERATOR=true
+ENV MOCK_MODE=true
+
+# Hugging Face cache directory (for model mounting)
+ENV HF_HOME=/app/models
+ENV TRANSFORMERS_CACHE=/app/models
+ENV HF_DATASETS_CACHE=/app/models/datasets
+
+# Output directory
+ENV OUTPUT_DIR=/app/output
+
+# Expose API port
+EXPOSE 8000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:8000/api/status || exit 1
+
+# Run the API server directly
+ENTRYPOINT ["/opt/venv/bin/python", "-m", "uvicorn", "src.api.server:app", "--host", "0.0.0.0", "--port", "8000"]

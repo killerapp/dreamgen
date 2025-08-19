@@ -50,6 +50,34 @@ class MockImageGenerator:
         gen_time = time.time() - start
         return output_path, gen_time, self.model_name
 
+    async def generate(self, prompt: str, seed: int = None) -> Image.Image:
+        """Generate a simple placeholder image for API compatibility.
+        
+        Args:
+            prompt: Prompt text (unused but could be drawn on image).
+            seed: Random seed (unused in mock).
+        Returns:
+            PIL Image object
+        """
+        width = self.config.image.width
+        height = self.config.image.height
+        
+        # Create a simple colored image with the prompt text
+        img = Image.new("RGB", (width, height), color=(64, 64, 64))
+        
+        # Optional: Add text to show it's a mock image
+        from PIL import ImageDraw, ImageFont
+        draw = ImageDraw.Draw(img)
+        try:
+            # Try to use a default font
+            font = ImageFont.load_default()
+            text = f"Mock Image\n{prompt[:50]}..." if len(prompt) > 50 else f"Mock Image\n{prompt}"
+            draw.text((10, 10), text, fill=(200, 200, 200), font=font)
+        except:
+            pass  # If font loading fails, just return the blank image
+        
+        return img
+
     def cleanup(self) -> None:  # noqa: D401 - stub
         """No-op cleanup to mirror real generator."""
         return None

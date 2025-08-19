@@ -4,6 +4,7 @@ Storage utilities for managing image output directories and files.
 from datetime import datetime
 from pathlib import Path
 import hashlib
+from PIL import Image
 
 class StorageManager:
     def __init__(self, base_dir: str = "output"):
@@ -56,3 +57,13 @@ class StorageManager:
                 if prompt_file.exists():
                     prompt_file.unlink()
                 image_file.unlink()
+
+def save_image_and_prompt(image: Image.Image, prompt: str, base_dir: str = "output") -> Path:
+    """Save an image and its prompt to the output directory."""
+    storage = StorageManager(base_dir)
+    output_path = storage.get_output_path(prompt)
+    
+    # Save the image
+    image.save(output_path, "PNG")
+    
+    return output_path

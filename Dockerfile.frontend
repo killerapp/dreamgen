@@ -1,0 +1,62 @@
+# Frontend Dockerfile for Next.js application
+# Multi-stage build for optimization
+
+# Dependencies stage
+FROM node:20-alpine AS deps
+RUN apk add --no-cache libc6-compat
+WORKDIR /app
+
+# Copy package files
+COPY web-ui/package*.json ./
+RUN npm ci --only=production
+
+# Build stage
+FROM node:20-alpine AS builder
+WORKDIR /app
+
+# Copy package files and install all dependencies (including dev)
+COPY web-ui/package*.json ./
+RUN npm ci
+
+# Copy source code
+COPY web-ui/ .
+
+# Set build-time environment variables
+ARG NEXT_PUBLIC_API_URL=http://localhost:8000
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+
+# Build the application
+RUN npm run build
+
+# Production stage
+FROM node:20-alpine AS runner
+WORKDIR /app
+
+# Create non-root user
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nextjs -u 1001
+
+# Copy necessary files from builder
+COPY --from=builder /app/public ./public
+COPY --from=builder /app/.next/standalone ./
+COPY --from=builder /app/.next/static ./.next/static
+
+# Set proper permissions
+RUN chown -R nextjs:nodejs /app
+
+USER nextjs
+
+# Expose port
+EXPOSE 7860
+
+# Set production environment
+ENV NODE_ENV=production
+ENV PORT=7860
+ENV HOSTNAME="0.0.0.0"
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD node -e "require('http').get('http://localhost:7860/api/health', (r) => {r.statusCode === 200 ? process.exit(0) : process.exit(1)})" || exit 1
+
+# Start the application directly
+ENTRYPOINT ["node", "server.js"]

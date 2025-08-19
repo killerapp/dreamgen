@@ -1,0 +1,102 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: imagegen-backend
+    ports:
+      - "8000:8000"
+    volumes:
+      # Mount models from host to avoid re-downloading
+      # Windows path for Hugging Face cache
+      - ${USERPROFILE}/.cache/huggingface:/app/models:ro
+      
+      # Mount output directory for generated images
+      - ./output:/app/output
+      
+      # Mount source code for development (hot reload)
+      - ./src:/app/src:ro
+      - ./data:/app/data:ro
+      
+      # Mount logs
+      - ./logs:/app/logs
+    environment:
+      # API Configuration
+      - HOST=0.0.0.0
+      - PORT=8000
+      
+      # Model Configuration
+      - USE_MOCK_GENERATOR=${USE_MOCK_GENERATOR:-true}
+      - MOCK_MODE=${MOCK_MODE:-true}
+      - HF_TOKEN=${HF_TOKEN:-}
+      - HF_HOME=/app/models
+      - TRANSFORMERS_CACHE=/app/models
+      
+      # Flux Model Configuration
+      - FLUX_MODEL=${FLUX_MODEL:-black-forest-labs/FLUX.1-schnell}
+      
+      # Ollama Configuration (if available)
+      - OLLAMA_HOST=${OLLAMA_HOST:-http://host.docker.internal:11434}
+      
+      # Output Configuration
+      - OUTPUT_DIR=/app/output
+      
+      # Logging
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    networks:
+      - imagegen-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/status"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+      args:
+        - NEXT_PUBLIC_API_URL=http://localhost:8000
+    container_name: imagegen-frontend
+    ports:
+      - "7860:7860"
+    environment:
+      - NODE_ENV=${NODE_ENV:-production}
+      - NEXT_PUBLIC_API_URL=http://backend:8000
+      - PORT=7860
+    networks:
+      - imagegen-network
+    depends_on:
+      - backend
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:7860"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Optional: Ollama service for local LLM
+  # Uncomment if you want to run Ollama in Docker
+  # ollama:
+  #   image: ollama/ollama:latest
+  #   container_name: imagegen-ollama
+  #   ports:
+  #     - "11434:11434"
+  #   volumes:
+  #     - ollama-data:/root/.ollama
+  #   networks:
+  #     - imagegen-network
+  #   restart: unless-stopped
+
+networks:
+  imagegen-network:
+    driver: bridge
+
+volumes:
+  ollama-data:
+    driver: local

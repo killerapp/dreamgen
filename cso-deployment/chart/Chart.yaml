@@ -16,10 +16,13 @@ keywords:
   - flux
   - cso-module
   - cloudstack-orchestrator
-icon: https://raw.githubusercontent.com/killerapp/continuous-image-gen/main/icon.png
+icon: https://raw.githubusercontent.com/killerapp/continuous-image-gen/main/web-ui/public/logo_mark.png
 annotations:
+  cso.platform/module: "true"
   cso.platform/module-tier: custom
   cso.platform/module-version: v1alpha1
+  cso.platform/category: "ai-ml"
+  cso.platform/requires-gpu: "optional"
 dependencies:
   - name: postgresql
     version: "12.x.x"

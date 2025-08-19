@@ -20,7 +20,7 @@ class ModelConfig:
     """Model-specific configuration."""
     ollama_model: str = "phi4:latest"
     ollama_temperature: float = 0.7
-    flux_model: str = "dev"
+    flux_model: str = "black-forest-labs/FLUX.1-schnell"  # Use smaller schnell model
     max_sequence_length: int = 512
     lora: LoraConfig = field(default_factory=LoraConfig)
 
@@ -29,8 +29,8 @@ class ImageConfig:
     """Image generation configuration."""
     height: int = 768
     width: int = 1360
-    num_inference_steps: int = 50
-    guidance_scale: float = 7.5
+    num_inference_steps: int = 4  # Schnell is optimized for 1-4 steps
+    guidance_scale: float = 0.0  # Schnell doesn't use guidance
     true_cfg_scale: float = 1.0
 
 @dataclass

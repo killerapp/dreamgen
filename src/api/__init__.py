@@ -1,0 +1,1 @@
+"""FastAPI backend for continuous image generation."""

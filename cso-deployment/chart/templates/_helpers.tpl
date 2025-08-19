@@ -39,7 +39,9 @@ app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
 cso.platform/module: continuous-image-gen
-cso.platform/tier: {{ .Values.continuousImageGen.tier | default "custom" }}
+cso.platform/tier: {{ .Values.csoModule.tier | default "custom" }}
+cso.platform/category: {{ .Values.csoModule.category | default "ai-ml" }}
+cso.platform/environment: {{ .Values.global.cso.environment | default "development" }}
 {{- end }}
 
 {{/*
