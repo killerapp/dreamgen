@@ -5,7 +5,10 @@ description = "Continuous image generation system using Ollama for prompts and F
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-    # PyTorch with CUDA will be installed separately
+    # PyTorch with CUDA 12.4
+    "torch==2.6.0+cu124",
+    "torchvision==0.21.0+cu124",
+    "torchaudio==2.6.0+cu124",
     "transformers>=4.30.0",
     "diffusers>=0.29.0",
     "Pillow>=10.0.0",
@@ -61,4 +64,19 @@ disable = ["C0111", "C0103"]
 asyncio_mode = "auto"
 testpaths = ["tests"]
 python_files = ["test_*.py"]
+
+[tool.uv.sources]
+torch = { index = "pytorch-cu124" }
+torchvision = { index = "pytorch-cu124" }
+torchaudio = { index = "pytorch-cu124" }
+markupsafe = { index = "pypi" }
+
+[[tool.uv.index]]
+name = "pypi"
+url = "https://pypi.org/simple"
+
+[[tool.uv.index]]
+name = "pytorch-cu124"
+url = "https://download.pytorch.org/whl/cu124"
+explicit = true
 
