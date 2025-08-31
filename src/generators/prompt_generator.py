@@ -127,6 +127,9 @@ class PromptGenerator:
 
             # Process and log the generated prompt
             new_prompt = response.message.content.strip()
+            # Clean up Unicode characters that cause Windows console issues
+            new_prompt = new_prompt.replace('\u2011', '-').replace('\u2013', '-').replace('\u2014', '--')
+            new_prompt = new_prompt.replace('\u2018', "'").replace('\u2019', "'").replace('\u201c', '"').replace('\u201d', '"')
             self.logger.info(f"Raw generated prompt: {new_prompt}")
 
             # Add new prompt to conversation history

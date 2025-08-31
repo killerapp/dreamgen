@@ -34,6 +34,43 @@ export interface SystemStatus {
   ollama_available: boolean;
 }
 
+export interface ModelInfo {
+  id: string;
+  name: string;
+  type: string;
+  status: 'not_downloaded' | 'downloading' | 'ready' | 'partial';
+  size: number;
+  incomplete_files: number;
+  path?: string;
+}
+
+export interface ModelStatus {
+  models: ModelInfo[];
+  cache_dir: string;
+}
+
+export interface HFTokenStatus {
+  configured: boolean;
+  source?: 'environment' | 'file';
+}
+
+export interface EditRequest {
+  prompt: string;
+  strength?: number;
+}
+
+export interface EditResponse {
+  id: string;
+  prompt: string;
+  original_path: string;
+  edited_path: string;
+  metadata: {
+    model: string;
+    strength: number;
+  };
+  created_at: string;
+}
+
 export class ImageGenAPI {
   private baseUrl: string;
   private ws: WebSocket | null = null;
@@ -162,6 +199,54 @@ export class ImageGenAPI {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       this.ws.send(JSON.stringify(message));
     }
+  }
+
+  async getModelStatus(): Promise<ModelStatus> {
+    const response = await fetch(`${this.baseUrl}/api/models/status`);
+    if (!response.ok) throw new Error('Failed to get model status');
+    return response.json();
+  }
+
+  async downloadModel(modelId: string): Promise<{ message: string; model_id: string }> {
+    const response = await fetch(`${this.baseUrl}/api/models/${encodeURIComponent(modelId)}/download`, {
+      method: 'POST',
+    });
+    if (!response.ok) throw new Error('Failed to start model download');
+    return response.json();
+  }
+
+  async setHFToken(token: string): Promise<{ message: string }> {
+    const response = await fetch(`${this.baseUrl}/api/config/hf-token`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ token }),
+    });
+    if (!response.ok) throw new Error('Failed to set HF token');
+    return response.json();
+  }
+
+  async getHFTokenStatus(): Promise<HFTokenStatus> {
+    const response = await fetch(`${this.baseUrl}/api/config/hf-token-status`);
+    if (!response.ok) throw new Error('Failed to get HF token status');
+    return response.json();
+  }
+
+  async editImage(file: File, request: EditRequest): Promise<EditResponse> {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('prompt', request.prompt);
+    if (request.strength !== undefined) {
+      formData.append('strength', request.strength.toString());
+    }
+
+    const response = await fetch(`${this.baseUrl}/api/edit`, {
+      method: 'POST',
+      body: formData,
+    });
+    if (!response.ok) throw new Error('Failed to edit image');
+    return response.json();
   }
 }
 

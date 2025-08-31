@@ -72,23 +72,22 @@ This is a Python-based AI image generation system with the following architectur
    - Organizes output by year/week folders
    - Saves both images and prompt text files
    - Automatic directory creation
+   - eventually should be in an S3 resource managed by orchestr8 platform
 
 ### Key Design Patterns
 
 - **Async/await** for concurrent operations (image generation, Ollama calls)
-- **Plugin architecture** for extensible prompt enhancement
-- **Mock generators** for testing without GPU/models
+- **Plugin architecture** for extensible prompt enhancement / entropy
 - **Dataclass configuration** for type-safe settings
 - **Rich CLI** with progress tracking and formatted output
 
 ### Technology Stack
 
-- **Python 3.11+** with uv package manager
-- **Flux transformers** for image generation (dev/schnell models)
+- **Flux by Black Forrest Labs** for image generation (dev/schnell models
 - **Ollama** for local LLM prompt generation
 - **PyTorch** with CUDA (NVIDIA) and MPS (Apple Silicon) support
 - **Next.js** for web UI
-- **Cloudflare Workers** (optional host-image feature)
+- **Docker** Containerization for K8ss / Orchestr8 / Docker compose for tessting
 
 ### Important Implementation Details
 

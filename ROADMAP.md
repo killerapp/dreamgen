@@ -1,11 +1,11 @@
 # ROADMAP.md
 
 ## Vision
-Transform continuous-image-gen from a standalone CLI tool into a modular image generation service for the cloudstack platform ecosystem.
+Transform continuous-image-gen from a standalone CLI tool into a modular image generation service for the orchestr8 platform ecosystem.
 
 ## Current State ✅
 - Standalone Python CLI application with Ollama + Flux integration
-- Plugin system for dynamic prompt enhancement
+- Plugin system for dynamic prompt / entropy enhancement
 - Local-only execution with GPU support (CUDA/MPS)
 - **Modern Next.js Web UI with IDE-style interface** (completed - replaced Gradio)
 - **FastAPI backend with REST and WebSocket support** (completed)
