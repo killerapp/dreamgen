@@ -69,9 +69,9 @@ class GenerateRequest(BaseModel):
     """Request model for image generation"""
 
     prompt: Optional[str] = Field(None, description="Optional custom prompt")
-    use_mock: bool = Field(False, description="Use mock generator for testing")
     enable_plugins: bool = Field(True, description="Enable plugin enhancements")
     seed: Optional[int] = Field(None, description="Random seed for reproducibility")
+    use_mock: bool = Field(False, description="Use mock generator for testing")
 
 
 class GenerateResponse(BaseModel):
@@ -451,7 +451,7 @@ async def generate_image(request: GenerateRequest):
                 )
             )
 
-        # Generate image
+        # Determine which generator to use
         logger.info(
             f"Generation mode - request.use_mock: {request.use_mock}, state['use_mock']: {state['use_mock']}"
         )

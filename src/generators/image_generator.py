@@ -2,6 +2,7 @@
 Image generator using Flux 1.1 transformers model.
 """
 
+import gc
 import logging
 import os
 import platform
@@ -73,6 +74,15 @@ class ImageGenerator:
         else:
             logger.warning("Running on CPU. This will be significantly slower.")
 
+    def _flush_memory(self) -> None:
+        """Aggressive memory cleanup optimized for RTX 4090."""
+        logger.debug("Performing aggressive memory cleanup")
+        gc.collect()
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+            torch.cuda.reset_max_memory_allocated()
+        logger.debug("Memory cleanup completed")
+
     def _determine_device(self, cpu_only: bool) -> Literal["cpu", "cuda", "mps"]:
         """Determine the appropriate device to use based on availability."""
         if cpu_only:
@@ -115,8 +125,9 @@ class ImageGenerator:
             os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "max_split_size_mb:512"
             logger.debug("Set PYTORCH_CUDA_ALLOC_CONF to max_split_size_mb:512")
 
-            # Determine appropriate torch dtype based on device
+            # Determine appropriate torch dtype based on device and model
             if self.device == "cuda":
+                # Use float16 for better compatibility across models
                 torch_dtype = torch.float16
                 logger.debug("Using torch.float16 for CUDA device")
             elif self.device == "mps":
@@ -140,8 +151,6 @@ class ImageGenerator:
                     self.pipe = DiffusionPipeline.from_pretrained(
                         self.model_name,
                         torch_dtype=torch_dtype,
-                        low_cpu_mem_usage=True,
-                        device_map="balanced" if self.device == "cuda" else None,
                         use_auth_token=(
                             hf_token
                             if hf_token and hf_token != "your_hugging_face_token_here"
@@ -153,29 +162,42 @@ class ImageGenerator:
                     # Check for Windows paging file error
                     if "paging file is too small" in str(e) or "os error 1455" in str(e).lower():
                         logger.error(
-                            "Windows paging file is too small. Increase virtual memory in system settings and restart."
+                            "\n" + "=" * 60 + "\n"
+                            "MEMORY ERROR: Insufficient memory to load Flux model\n"
+                            "=" * 60 + "\n"
+                            "The Flux model requires ~15GB of RAM to load.\n\n"
+                            "Solutions:\n"
+                            "1. Use mock mode: Add --mock flag\n"
+                            "2. Increase Windows virtual memory:\n"
+                            "   - Open System Properties > Advanced > Performance Settings\n"
+                            "   - Advanced tab > Virtual Memory > Change\n"
+                            "   - Set to 32GB or more\n"
+                            "3. Use a smaller model like SDXL or SD 1.5\n"
+                            "4. Run in Docker with proper memory limits\n"
+                            "=" * 60
                         )
+                        raise RuntimeError(
+                            "Insufficient memory for Flux model. Use --mock flag or increase virtual memory."
+                        ) from e
                     raise
 
-                # Move model to device first if not using sequential CPU offloading
-                # Skip this step if device_map is set, as it's already handled by the pipeline
-                if not hasattr(self.pipe, "device_map") or self.pipe.device_map is None:
+                # Enable model CPU offload for memory optimization on CUDA (better than sequential for RTX 4090)
+                if self.device == "cuda":
+                    logger.info("Enabling model CPU offload for RTX 4090 memory optimization")
+                    self.pipe.enable_model_cpu_offload()
+                    logger.debug("Model CPU offload enabled")
+                # Move model to device if not using CPU offloading
+                elif self.device != "cpu":
                     logger.debug(f"Moving model to {self.device}")
                     try:
                         self.pipe.to(self.device)
                         logger.debug("Model moved to device successfully")
                     except ValueError as e:
-                        if "sequential model offloading" in str(e):
-                            logger.warning(
-                                "Sequential CPU offloading detected, skipping device move"
-                            )
+                        if "model offloading" in str(e) or "sequential model offloading" in str(e):
+                            logger.warning("CPU offloading detected, skipping device move")
                             # Continue without moving to device as it's already handled by offloading
                         else:
                             raise
-                else:
-                    logger.debug(
-                        f"Model already has device_map set, skipping manual device placement"
-                    )
 
                 # Load random Lora if selected through plugin system
                 logger.info("Checking for Lora plugins")
@@ -214,6 +236,8 @@ class ImageGenerator:
                 if self.device in ["cuda", "mps"]:
                     logger.info("Setting up GPU optimizations")
                     self._setup_gpu_optimizations()
+                    # Final memory cleanup after all optimizations
+                    self._flush_memory()
 
             except Exception as model_load_error:
                 logger.error(f"Error loading model: {str(model_load_error)}")
@@ -241,6 +265,27 @@ class ImageGenerator:
                     logger.info("Enabled xformers memory efficient attention")
                 except Exception as xformers_error:
                     logger.warning(f"Xformers optimization not available: {str(xformers_error)}")
+
+                # RTX 4090 specific optimizations
+                try:
+                    logger.debug("Applying RTX 4090 specific optimizations")
+
+                    # Enable VAE slicing for memory efficiency
+                    if hasattr(self.pipe, "enable_vae_slicing"):
+                        self.pipe.enable_vae_slicing()
+                        logger.debug("Enabled VAE slicing for RTX 4090")
+
+                    # Set channels_last memory format for better tensor performance
+                    if hasattr(self.pipe, "unet") and self.pipe.unet is not None:
+                        self.pipe.unet.to(memory_format=torch.channels_last)
+                        logger.debug("Set UNet to channels_last memory format")
+
+                    # Apply memory flush
+                    self._flush_memory()
+                    logger.info("Applied RTX 4090 specific optimizations")
+
+                except Exception as rtx_error:
+                    logger.warning(f"RTX 4090 optimizations not fully available: {str(rtx_error)}")
 
             # Print memory info if available
             allocated, reserved, total = self.memory_manager.get_gpu_memory_info()
