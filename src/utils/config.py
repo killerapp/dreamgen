@@ -20,7 +20,7 @@ class ModelConfig:
     """Model-specific configuration."""
     ollama_model: str = "phi4:latest"
     ollama_temperature: float = 0.7
-    flux_model: str = "black-forest-labs/FLUX.1-schnell"  # Use smaller schnell model
+    flux_model: str = "Qwen/Qwen-Image"  # Efficient, modern model ~2-4GB VRAM
     max_sequence_length: int = 512
     lora: LoraConfig = field(default_factory=LoraConfig)
 

@@ -31,7 +31,7 @@ from rich.table import Table
 
 from ..generators.prompt_generator import PromptGenerator
 from ..generators.image_generator import ImageGenerator
-from ..generators.mock_image_generator import MockImageGenerator
+
 from .storage import StorageManager
 from .config import Config
 from .metrics import MetricsCollector
@@ -115,11 +115,7 @@ def generate(
         False, "--mps-use-fp16",
         help="Use float16 precision on Apple Silicon (may improve performance)",
     ),
-    mock: bool = typer.Option(
-        False, "--mock",
-        help="Use mock image generator that saves placeholder images",
-    )
-) -> None:
+    ) -> None:
     """Generate a single image using AI-generated prompts or a custom prompt."""
     async def _generate() -> None:
         try:
@@ -137,11 +133,7 @@ def generate(
                     # Initialize components
                     init_task = progress.add_task("[cyan]Initializing components...", total=None)
                     prompt_gen = PromptGenerator(app.state.config)
-                    image_gen = (
-                        MockImageGenerator(app.state.config)
-                        if mock
-                        else ImageGenerator(app.state.config)
-                    )
+                    image_gen = ImageGenerator(app.state.config)
                     storage = StorageManager()
                     metrics = MetricsCollector(app.state.config.system.log_dir / "metrics")
                     progress.remove_task(init_task)
@@ -277,11 +269,7 @@ def loop(
         False, "--mps-use-fp16",
         help="Use float16 precision on Apple Silicon (may improve performance)",
     ),
-    mock: bool = typer.Option(
-        False, "--mock",
-        help="Use mock image generator that saves placeholder images",
-    )
-) -> None:
+    ) -> None:
     """Generate a batch of images with unique prompts."""
     async def _loop() -> None:
         try:
@@ -302,11 +290,7 @@ def loop(
                     # Initialize components
                     init_task = progress.add_task("[cyan]Initializing models...", total=None)
                     prompt_gen = PromptGenerator(app.state.config)
-                    image_gen = (
-                        MockImageGenerator(app.state.config)
-                        if mock
-                        else ImageGenerator(app.state.config)
-                    )
+                    image_gen = ImageGenerator(app.state.config)
                     storage = StorageManager()
                     metrics = MetricsCollector(app.state.config.system.log_dir / "metrics")
                     progress.remove_task(init_task)
