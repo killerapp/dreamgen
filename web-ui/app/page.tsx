@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
-import { Terminal, Image as ImageIcon, Settings, Sparkles, Loader2, Menu, X } from "lucide-react";
-import { api, GenerateResponse, PluginInfo, SystemStatus } from "@/lib/api";
+import { Terminal, Image as ImageIcon, Settings as SettingsIcon, Sparkles, Loader2, Menu, X, Upload, Edit3 } from "lucide-react";
+import { api, GenerateResponse, PluginInfo, SystemStatus, EditResponse } from "@/lib/api";
 import Gallery from "@/components/Gallery";
+import Settings from "@/components/Settings";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import galleryCache from "@/lib/cache";
@@ -20,6 +21,15 @@ export default function Home() {
   const [generationStatus, setGenerationStatus] = useState<string>("");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showLogs, setShowLogs] = useState(true);
+  
+  // Image editing state
+  const [editMode, setEditMode] = useState<"generate" | "edit">("generate");
+  const [editPrompt, setEditPrompt] = useState("");
+  const [editStrength, setEditStrength] = useState(0.8);
+  const [isEditing, setIsEditing] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [currentEdit, setCurrentEdit] = useState<EditResponse | null>(null);
+  const [dragActive, setDragActive] = useState(false);
 
   useEffect(() => {
     // Fetch initial status
@@ -45,6 +55,12 @@ export default function Home() {
           addLog(`Error: ${msg.error}`, 'error');
           setGenerationStatus("");
           setIsGenerating(false);
+        } else if (msg.type === 'model_download_started') {
+          addLog(`Model download started: ${msg.model_id}`);
+        } else if (msg.type === 'model_download_completed') {
+          addLog(`Model download completed: ${msg.model_id}`);
+        } else if (msg.type === 'model_download_error') {
+          addLog(`Model download failed: ${msg.model_id} - ${msg.error}`, 'error');
         }
       }
     });
@@ -102,7 +118,7 @@ export default function Home() {
   const tabs = [
     { id: "generate", label: "Generate", icon: Sparkles },
     { id: "gallery", label: "Gallery", icon: ImageIcon },
-    { id: "settings", label: "Settings", icon: Settings },
+    { id: "settings", label: "Settings", icon: SettingsIcon },
   ];
 
   return (
@@ -154,6 +170,7 @@ export default function Home() {
             return (
               <button
                 key={tab.id}
+                data-testid={`tab-${tab.id}`}
                 onClick={() => {
                   setActiveTab(tab.id);
                   setSidebarOpen(false);
@@ -223,7 +240,8 @@ export default function Home() {
                       />
                     </div>
 
-                    <motion.button 
+                    <motion.button
+                      data-testid="generate-image-button" 
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
                       className="w-full py-2.5 bg-primary text-primary-foreground rounded-md hover:opacity-90 transition-opacity font-medium text-sm disabled:opacity-50"
@@ -390,28 +408,9 @@ export default function Home() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
-              className="h-full p-4 sm:p-6 lg:p-8 overflow-y-auto"
+              className="h-full"
             >
-              <div className="max-w-2xl mx-auto">
-                <h2 className="text-lg font-semibold mb-4">Settings</h2>
-                <div className="space-y-4">
-                  <div>
-                    <label className="text-sm font-medium">API Endpoint</label>
-                    <input 
-                      type="text" 
-                      defaultValue="http://localhost:8000"
-                      className="w-full mt-1 p-2 bg-background border border-input rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium">Default Model</label>
-                    <select className="w-full mt-1 p-2 bg-background border border-input rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary/50">
-                      <option>flux-schnell</option>
-                      <option>flux-dev</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
+              <Settings systemStatus={status} />
             </motion.div>
           )}
         </AnimatePresence>
