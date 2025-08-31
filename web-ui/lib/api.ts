@@ -55,9 +55,13 @@ export class ImageGenAPI {
     return response.json();
   }
 
-  async togglePlugin(pluginName: string): Promise<{ plugin: string; enabled: boolean }> {
-    const response = await fetch(`${this.baseUrl}/api/plugins/${pluginName}/toggle`, {
+  async togglePlugin(pluginName: string, enabled: boolean): Promise<PluginInfo> {
+    const response = await fetch(`${this.baseUrl}/api/plugins/${pluginName}`, {
       method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ enabled }),
     });
     if (!response.ok) throw new Error('Failed to toggle plugin');
     return response.json();

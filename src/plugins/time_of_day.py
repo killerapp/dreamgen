@@ -3,15 +3,16 @@ from typing import Literal
 
 TimeOfDay = Literal["morning", "afternoon", "evening", "night"]
 
+
 def get_time_of_day() -> TimeOfDay:
     """
     Determines the time of day based on the current hour.
-    
+
     Returns:
         str: One of "morning", "afternoon", "evening", or "night"
     """
     hour = datetime.now().hour
-    
+
     if 5 <= hour < 12:
         return "morning"
     elif 12 <= hour < 17:
@@ -20,3 +21,11 @@ def get_time_of_day() -> TimeOfDay:
         return "evening"
     else:
         return "night"
+
+
+def get_plugin(config=None):
+    return (
+        "time_of_day",
+        "Provides temporal context based on the current time of day",
+        get_time_of_day,
+    )

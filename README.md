@@ -130,12 +130,29 @@ def get_context() -> Optional[str]:
     return "your custom context here"
 ```
 
-Place your plugin in the `src/plugins/` directory and update the plugin manager to include it. Your plugin can:
+Place your plugin in the `src/plugins/` directory and expose a `get_plugin` function. It will be discovered automatically. Your plugin can:
 - Read from local data files
 - Connect to APIs (with proper authentication)
 - Use system information
 - Implement caching for performance
 - Maintain state between generations
+
+### Managing Plugins
+
+You can list, enable, or disable plugins from the CLI:
+
+```bash
+uv run imagegen plugins list
+uv run imagegen plugins disable time_of_day
+uv run imagegen plugins enable time_of_day
+```
+
+The API also exposes plugin management:
+
+- `GET /api/plugins` – list all plugins and their status
+- `POST /api/plugins/{name}` with `{ "enabled": true|false }` – update plugin state
+
+And the web UI includes a sidebar where you can toggle plugins on or off.
 
 ## 🎮 Command Reference
 

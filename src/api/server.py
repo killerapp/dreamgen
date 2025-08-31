@@ -19,8 +19,8 @@ from pydantic import BaseModel, Field
 
 from src.generators.mock_image_generator import MockImageGenerator
 from src.generators.prompt_generator import PromptGenerator
+from src.plugins import ensure_initialized, plugin_manager
 from src.utils.config import Config
-from src.utils.plugin_manager import PluginManager
 from src.utils.storage import save_image_and_prompt
 
 # Configure logging
@@ -52,7 +52,7 @@ app.add_middleware(
 
 # Global state
 config = Config()
-plugin_manager = PluginManager()
+ensure_initialized(config)
 state = {"use_mock": False}  # Use real Flux generation with GPU
 
 # Register plugins - simplified for now
@@ -92,6 +92,12 @@ class PluginInfo(BaseModel):
     name: str
     enabled: bool
     description: str
+
+
+class PluginToggleRequest(BaseModel):
+    """Request model for enabling or disabling a plugin"""
+
+    enabled: bool
 
 
 class SystemStatus(BaseModel):
@@ -195,19 +201,23 @@ async def get_plugins():
     return plugins
 
 
-@app.post("/api/plugins/{plugin_name}/toggle")
-async def toggle_plugin(plugin_name: str):
-    """Toggle a plugin on/off"""
+@app.post("/api/plugins/{plugin_name}", response_model=PluginInfo)
+async def set_plugin_state(plugin_name: str, request: PluginToggleRequest):
+    """Enable or disable a plugin"""
     if plugin_name not in plugin_manager.plugins:
         raise HTTPException(status_code=404, detail=f"Plugin '{plugin_name}' not found")
 
-    current_state = plugin_manager.is_enabled(plugin_name)
-    if current_state:
-        plugin_manager.disable_plugin(plugin_name)
-    else:
+    if request.enabled:
         plugin_manager.enable_plugin(plugin_name)
+        if plugin_name not in config.plugins.enabled_plugins:
+            config.plugins.enabled_plugins.append(plugin_name)
+    else:
+        plugin_manager.disable_plugin(plugin_name)
+        if plugin_name in config.plugins.enabled_plugins:
+            config.plugins.enabled_plugins.remove(plugin_name)
 
-    return {"plugin": plugin_name, "enabled": not current_state}
+    info = plugin_manager.plugins[plugin_name]
+    return PluginInfo(name=plugin_name, enabled=info.enabled, description=info.description)
 
 
 @app.post("/api/generate", response_model=GenerateResponse)

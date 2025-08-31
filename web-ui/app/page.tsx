@@ -89,9 +89,9 @@ export default function Home() {
     }
   };
 
-  const handlePluginToggle = async (pluginName: string) => {
+  const handlePluginToggle = async (plugin: PluginInfo) => {
     try {
-      await api.togglePlugin(pluginName);
+      await api.togglePlugin(plugin.name, !plugin.enabled);
       const updatedPlugins = await api.getPlugins();
       setPlugins(updatedPlugins);
     } catch (error) {
@@ -246,17 +246,24 @@ export default function Home() {
                       </h3>
                       <div className="space-y-1">
                         {plugins.map((plugin) => (
-                          <label 
-                            key={plugin.name} 
-                            className="flex items-center gap-2 text-xs cursor-pointer hover:text-foreground transition-colors"
+                          <label
+                            key={plugin.name}
+                            className="flex items-start gap-2 text-xs cursor-pointer hover:text-foreground transition-colors"
                           >
-                            <input 
-                              type="checkbox" 
+                            <input
+                              type="checkbox"
                               checked={plugin.enabled}
-                              onChange={() => handlePluginToggle(plugin.name)}
-                              className="rounded accent-primary"
+                              onChange={() => handlePluginToggle(plugin)}
+                              className="rounded mt-0.5 accent-primary"
                             />
-                            <span>{plugin.name}</span>
+                            <span className="flex-1">
+                              <span className="block capitalize">{plugin.name.replace(/_/g, ' ')}</span>
+                              {plugin.description && (
+                                <span className="block text-[10px] text-muted-foreground">
+                                  {plugin.description}
+                                </span>
+                              )}
+                            </span>
                           </label>
                         ))}
                       </div>
