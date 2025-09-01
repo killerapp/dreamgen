@@ -18,6 +18,24 @@ Built by [Agentic Insights](https://agenticinsights.com)
 
 ## 🚀 Quick Start
 
+### Option 1: Install from PyPI (Recommended)
+
+```bash
+# Install using pipx (isolated environment)
+pipx install continuous-image-gen
+
+# Or install with pip
+pip install continuous-image-gen
+
+# Set your environment variables
+export HUGGINGFACE_TOKEN=your_token_here
+
+# Start generating!
+imagegen generate
+```
+
+### Option 2: Development Setup
+
 1. Install prerequisites:
    - uv Python manager (install using [astral](https://astral.sh/uv/install))
    - Ollama (from [ollama.ai](https://ollama.ai))
@@ -26,7 +44,7 @@ Built by [Agentic Insights](https://agenticinsights.com)
 
 2. Set up the project:
    ```bash
-   git clone https://github.com/killerapp/continuous-image-gen
+   git clone https://github.com/vaski/continuous-image-gen
    cd continuous-image-gen
    
    # Set your Hugging Face token (required to download models)

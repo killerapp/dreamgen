@@ -1,0 +1,63 @@
+name: Semantic Release
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+  id-token: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    concurrency: release
+    environment:
+      name: pypi
+      url: https://pypi.org/project/continuous-image-gen/
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: |
+          npm install -g semantic-release @semantic-release/git @semantic-release/exec @semantic-release/github
+
+      - name: Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Configure git
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Run semantic-release
+          npx semantic-release
+
+      - name: Publish to PyPI
+        if: success()
+        env:
+          PYPI_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
+        run: |
+          # Check if dist directory exists (created by semantic-release)
+          if [ -d "dist" ]; then
+            echo "Publishing to PyPI..."
+            uv publish --token $PYPI_TOKEN
+          else
+            echo "No dist directory found, skipping PyPI publish"
+          fi

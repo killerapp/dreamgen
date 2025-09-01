@@ -31,6 +31,7 @@ from rich.table import Table
 
 from ..generators.prompt_generator import PromptGenerator
 from ..generators.image_generator import ImageGenerator
+from ..generators.mock_image_generator import MockImageGenerator
 
 from .storage import StorageManager
 from .config import Config
@@ -111,6 +112,10 @@ def generate(
         None, "--prompt", "-p", 
         help="Provide a custom prompt for direct inference"
     ),
+    mock: bool = typer.Option(
+        False, "--mock",
+        help="Use mock image generator (no GPU required, generates placeholder images)",
+    ),
     mps_use_fp16: bool = typer.Option(
         False, "--mps-use-fp16",
         help="Use float16 precision on Apple Silicon (may improve performance)",
@@ -133,7 +138,11 @@ def generate(
                     # Initialize components
                     init_task = progress.add_task("[cyan]Initializing components...", total=None)
                     prompt_gen = PromptGenerator(app.state.config)
-                    image_gen = ImageGenerator(app.state.config)
+                    if mock:
+                        console.print("[yellow]Using mock image generator (no GPU required)[/yellow]")
+                        image_gen = MockImageGenerator(app.state.config)
+                    else:
+                        image_gen = ImageGenerator(app.state.config)
                     storage = StorageManager()
                     metrics = MetricsCollector(app.state.config.system.log_dir / "metrics")
                     progress.remove_task(init_task)
@@ -265,6 +274,10 @@ def loop(
         help="Interval in seconds between generations",
         min=0
     ),
+    mock: bool = typer.Option(
+        False, "--mock",
+        help="Use mock image generator (no GPU required, generates placeholder images)",
+    ),
     mps_use_fp16: bool = typer.Option(
         False, "--mps-use-fp16",
         help="Use float16 precision on Apple Silicon (may improve performance)",
@@ -290,7 +303,11 @@ def loop(
                     # Initialize components
                     init_task = progress.add_task("[cyan]Initializing models...", total=None)
                     prompt_gen = PromptGenerator(app.state.config)
-                    image_gen = ImageGenerator(app.state.config)
+                    if mock:
+                        console.print("[yellow]Using mock image generator (no GPU required)[/yellow]")
+                        image_gen = MockImageGenerator(app.state.config)
+                    else:
+                        image_gen = ImageGenerator(app.state.config)
                     storage = StorageManager()
                     metrics = MetricsCollector(app.state.config.system.log_dir / "metrics")
                     progress.remove_task(init_task)

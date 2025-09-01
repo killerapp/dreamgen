@@ -1,9 +1,7 @@
 """
-Initialize the continuous image generation system.
-"""
-from pathlib import Path
-from dotenv import load_dotenv
+Continuous Image Generation CLI
 
-# Load environment variables from .env file
-env_path = Path(__file__).parent.parent / '.env'
-load_dotenv(env_path)
+A powerful CLI tool for generating images using AI models like Flux with Ollama for prompt enhancement.
+"""
+
+__version__ = "0.1.0"

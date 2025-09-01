@@ -172,11 +172,11 @@ class ImageGenerator:
                         ) from e
                     raise
                 
-                # Enable model CPU offload for memory optimization on CUDA (better than sequential for RTX 4090)
+                # Enable sequential CPU offload for better memory management with Flux
                 if self.device == "cuda":
-                    logger.info("Enabling model CPU offload for RTX 4090 memory optimization")
-                    self.pipe.enable_model_cpu_offload()
-                    logger.debug("Model CPU offload enabled")
+                    logger.info("Enabling sequential CPU offload for memory optimization")
+                    self.pipe.enable_sequential_cpu_offload()
+                    logger.debug("Sequential CPU offload enabled")
                 # Move model to device if not using CPU offloading
                 elif self.device != "cpu":
                     logger.debug(f"Moving model to {self.device}")

@@ -6,89 +6,175 @@ from typing import Any, Dict, List, Optional
 import os
 import json
 from dataclasses import dataclass, asdict, field
+from dotenv import load_dotenv
 
 @dataclass
 class LoraConfig:
     """Lora-specific configuration."""
-    lora_dir: Path = Path("C:/ComfyUI/ComfyUI/models/loras")
-    enabled_loras: List[str] = field(default_factory=list)
-    # Probability of applying any Lora (0.0 to 1.0)
-    application_probability: float = 0.7
+    lora_dir: Path
+    enabled_loras: List[str]
+    application_probability: float
 
 @dataclass
 class ModelConfig:
     """Model-specific configuration."""
-    ollama_model: str = "phi4:latest"
-    ollama_temperature: float = 0.7
-    flux_model: str = "Qwen/Qwen-Image"  # Efficient, modern model ~2-4GB VRAM
-    max_sequence_length: int = 512
-    lora: LoraConfig = field(default_factory=LoraConfig)
+    ollama_model: str
+    ollama_temperature: float
+    flux_model: str
+    max_sequence_length: int
+    lora: LoraConfig
 
 @dataclass
 class ImageConfig:
     """Image generation configuration."""
-    height: int = 768
-    width: int = 1360
-    num_inference_steps: int = 4  # Schnell is optimized for 1-4 steps
-    guidance_scale: float = 0.0  # Schnell doesn't use guidance
-    true_cfg_scale: float = 1.0
+    height: int
+    width: int
+    num_inference_steps: int
+    guidance_scale: float
+    true_cfg_scale: float
 
 @dataclass
 class PluginConfig:
     """Plugin-related configuration."""
-    enabled_plugins: List[str] = field(default_factory=lambda: [
-        "time_of_day",
-        "nearest_holiday",
-        "holiday_fact",
-        "art_style",
-        "lora"
-    ])
-    plugin_order: Dict[str, int] = field(default_factory=lambda: {
-        "time_of_day": 1,
-        "nearest_holiday": 2,
-        "holiday_fact": 3,
-        "art_style": 4,
-        "lora": 5
-    })
+    enabled_plugins: List[str]
+    plugin_order: Dict[str, int]
 
 @dataclass
 class SystemConfig:
     """System-related configuration."""
-    output_dir: Path = Path("output")
-    log_dir: Path = Path("logs")
-    cache_dir: Path = Path(".cache")
-    cpu_only: bool = False
-    mps_use_fp16: bool = False
+    output_dir: Path
+    log_dir: Path
+    cache_dir: Path
+    cpu_only: bool
+    mps_use_fp16: bool
 
 class Config:
-    def __init__(self):
-        self.plugins = PluginConfig()
-        self.model = ModelConfig(
-            lora=LoraConfig(
-                lora_dir=Path(os.getenv('LORA_DIR', LoraConfig.lora_dir)),
-                enabled_loras=os.getenv('ENABLED_LORAS', '').split(',') if os.getenv('ENABLED_LORAS') else [],
-                application_probability=float(os.getenv('LORA_APPLICATION_PROBABILITY', LoraConfig.application_probability))
-            ),
-            ollama_model=os.getenv('OLLAMA_MODEL', ModelConfig.ollama_model),
-            ollama_temperature=float(os.getenv('OLLAMA_TEMPERATURE', ModelConfig.ollama_temperature)),
-            flux_model=os.getenv('FLUX_MODEL', ModelConfig.flux_model),
-            max_sequence_length=int(os.getenv('MAX_SEQUENCE_LENGTH', ModelConfig.max_sequence_length))
+    def __init__(self, env_file: Optional[Path] = None):
+        # Load environment variables from .env file
+        if env_file and env_file.exists():
+            load_dotenv(env_file, override=True)
+        elif env_file is None:
+            load_dotenv(override=True)  # Load from default .env in current directory only if not explicitly overridden
+        
+        # Plugin configuration
+        enabled_plugins_str = os.getenv('ENABLED_PLUGINS')
+        if not enabled_plugins_str:
+            raise ValueError("ENABLED_PLUGINS environment variable is required")
+        enabled_plugins = [p.strip() for p in enabled_plugins_str.split(',') if p.strip()]
+        
+        plugin_order_str = os.getenv('PLUGIN_ORDER')
+        if not plugin_order_str:
+            raise ValueError("PLUGIN_ORDER environment variable is required")
+        plugin_order = {}
+        for item in plugin_order_str.split(','):
+            if ':' in item:
+                name, order = item.split(':', 1)
+                plugin_order[name.strip()] = int(order.strip())
+        
+        self.plugins = PluginConfig(
+            enabled_plugins=enabled_plugins,
+            plugin_order=plugin_order
         )
+        
+        # Lora configuration
+        enabled_loras_str = os.getenv('ENABLED_LORAS')
+        enabled_loras = [l.strip() for l in enabled_loras_str.split(',') if l.strip()] if enabled_loras_str else []
+        
+        lora_dir = os.getenv('LORA_DIR')
+        if not lora_dir:
+            raise ValueError("LORA_DIR environment variable is required")
+        
+        lora_prob = os.getenv('LORA_APPLICATION_PROBABILITY')
+        if not lora_prob:
+            raise ValueError("LORA_APPLICATION_PROBABILITY environment variable is required")
+        
+        lora_config = LoraConfig(
+            lora_dir=Path(lora_dir),
+            enabled_loras=enabled_loras,
+            application_probability=float(lora_prob)
+        )
+        
+        # Model configuration
+        ollama_model = os.getenv('OLLAMA_MODEL')
+        if not ollama_model:
+            raise ValueError("OLLAMA_MODEL environment variable is required")
+        
+        ollama_temp = os.getenv('OLLAMA_TEMPERATURE')
+        if not ollama_temp:
+            raise ValueError("OLLAMA_TEMPERATURE environment variable is required")
+        
+        flux_model = os.getenv('FLUX_MODEL')
+        if not flux_model:
+            raise ValueError("FLUX_MODEL environment variable is required")
+        
+        max_seq_len = os.getenv('MAX_SEQUENCE_LENGTH')
+        if not max_seq_len:
+            raise ValueError("MAX_SEQUENCE_LENGTH environment variable is required")
+        
+        self.model = ModelConfig(
+            ollama_model=ollama_model,
+            ollama_temperature=float(ollama_temp),
+            flux_model=flux_model,
+            max_sequence_length=int(max_seq_len),
+            lora=lora_config
+        )
+        
+        # Image configuration
+        height = os.getenv('IMAGE_HEIGHT')
+        if not height:
+            raise ValueError("IMAGE_HEIGHT environment variable is required")
+        
+        width = os.getenv('IMAGE_WIDTH')
+        if not width:
+            raise ValueError("IMAGE_WIDTH environment variable is required")
+        
+        steps = os.getenv('NUM_INFERENCE_STEPS')
+        if not steps:
+            raise ValueError("NUM_INFERENCE_STEPS environment variable is required")
+        
+        guidance = os.getenv('GUIDANCE_SCALE')
+        if not guidance:
+            raise ValueError("GUIDANCE_SCALE environment variable is required")
+        
+        cfg_scale = os.getenv('TRUE_CFG_SCALE')
+        if not cfg_scale:
+            raise ValueError("TRUE_CFG_SCALE environment variable is required")
         
         self.image = ImageConfig(
-            height=int(os.getenv('IMAGE_HEIGHT', ImageConfig.height)),
-            width=int(os.getenv('IMAGE_WIDTH', ImageConfig.width)),
-            num_inference_steps=int(os.getenv('NUM_INFERENCE_STEPS', ImageConfig.num_inference_steps)),
-            guidance_scale=float(os.getenv('GUIDANCE_SCALE', ImageConfig.guidance_scale)),
-            true_cfg_scale=float(os.getenv('TRUE_CFG_SCALE', ImageConfig.true_cfg_scale))
+            height=int(height),
+            width=int(width),
+            num_inference_steps=int(steps),
+            guidance_scale=float(guidance),
+            true_cfg_scale=float(cfg_scale)
         )
         
+        # System configuration
+        output_dir = os.getenv('OUTPUT_DIR')
+        if not output_dir:
+            raise ValueError("OUTPUT_DIR environment variable is required")
+        
+        log_dir = os.getenv('LOG_DIR')
+        if not log_dir:
+            raise ValueError("LOG_DIR environment variable is required")
+        
+        cache_dir = os.getenv('CACHE_DIR')
+        if not cache_dir:
+            raise ValueError("CACHE_DIR environment variable is required")
+        
+        cpu_only = os.getenv('CPU_ONLY')
+        if not cpu_only:
+            raise ValueError("CPU_ONLY environment variable is required")
+        
+        mps_fp16 = os.getenv('MPS_USE_FP16')
+        if not mps_fp16:
+            raise ValueError("MPS_USE_FP16 environment variable is required")
+        
         self.system = SystemConfig(
-            output_dir=Path(os.getenv('OUTPUT_DIR', SystemConfig.output_dir)),
-            log_dir=Path(os.getenv('LOG_DIR', SystemConfig.log_dir)),
-            cache_dir=Path(os.getenv('CACHE_DIR', SystemConfig.cache_dir)),
-            cpu_only=bool(os.getenv('CPU_ONLY', SystemConfig.cpu_only)),
-            mps_use_fp16=bool(os.getenv('MPS_USE_FP16', SystemConfig.mps_use_fp16))
+            output_dir=Path(output_dir),
+            log_dir=Path(log_dir),
+            cache_dir=Path(cache_dir),
+            cpu_only=cpu_only.lower() in ('true', '1', 'yes', 'on'),
+            mps_use_fp16=mps_fp16.lower() in ('true', '1', 'yes', 'on')
         )
         
     @classmethod
@@ -146,8 +232,8 @@ class Config:
         # Validate model parameters
         if not (1 <= self.image.num_inference_steps <= 150):
             errors.append(f"Invalid inference steps: {self.image.num_inference_steps} (must be between 1 and 150)")
-        if not (1.0 <= self.image.guidance_scale <= 30.0):
-            errors.append(f"Invalid guidance scale: {self.image.guidance_scale} (must be between 1.0 and 30.0)")
+        if not (0.0 <= self.image.guidance_scale <= 30.0):
+            errors.append(f"Invalid guidance scale: {self.image.guidance_scale} (must be between 0.0 and 30.0)")
         if not (1.0 <= self.image.true_cfg_scale <= 10.0):
             errors.append(f"Invalid true CFG scale: {self.image.true_cfg_scale} (must be between 1.0 and 10.0)")
             
