@@ -1,6 +1,6 @@
 [project]
 name = "continuous-image-gen"
-version = "0.1.0"
+version = "1.0.0"
 description = "Continuous image generation system using Ollama for prompts and Flux for image generation"
 readme = "README.md"
 authors = [
