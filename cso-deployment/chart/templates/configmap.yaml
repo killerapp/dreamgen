@@ -9,20 +9,20 @@ data:
     # Application Configuration
     environment: {{ .Values.global.cso.environment }}
     debug: false
-    
+
     # Backend Configuration
     backend:
       host: 0.0.0.0
       port: 8000
       workers: 2
       reload: false
-      
+
     # Model Configuration
     models:
       flux_model: {{ .Values.backend.env.FLUX_MODEL | default "black-forest-labs/FLUX.1-schnell" }}
       use_mock: {{ .Values.backend.env.USE_MOCK_GENERATOR | default "true" }}
       cache_dir: {{ .Values.storage.models.mountPath | default "/app/models" }}
-      
+
     # Plugin Configuration
     plugins:
       enabled: true
@@ -31,19 +31,19 @@ data:
         - time_context
         - holiday_context
         - style_enhancer
-        
+
     # Storage Configuration
     storage:
       output_dir: {{ .Values.storage.output.mountPath | default "/app/output" }}
       max_files: 1000
       cleanup_days: 30
-      
+
     # Monitoring
     monitoring:
       metrics_enabled: {{ .Values.monitoring.metrics.enabled }}
       metrics_port: {{ .Values.monitoring.metrics.port }}
       tracing_enabled: {{ .Values.monitoring.tracing.enabled }}
-      
+
   frontend-config.json: |
     {
       "apiUrl": "{{ .Values.frontend.env.NEXT_PUBLIC_API_URL }}",

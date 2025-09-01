@@ -1,6 +1,6 @@
 # CloudStack Orchestrator Module Configuration Template
 # Module: continuous-image-gen
-# 
+#
 # INSTRUCTIONS:
 # 1. Copy this file to values.local.yaml
 # 2. Fill in all required values marked with <REQUIRED>
@@ -13,10 +13,10 @@ global:
     projectId: "<REQUIRED: your-gcp-project-id>"
     region: "us-central1"
     zone: "us-central1-a"
-    
+
   # Domain configuration (inherits from CSO platform)
   domain: "platform.your-domain.com"
-  
+
   # Image registry (using GCP Artifact Registry)
   imageRegistry: "gcr.io/<REQUIRED: your-gcp-project-id>"
 
@@ -25,19 +25,19 @@ continuousImageGen:
   # Basic settings
   enabled: true
   namespace: "continuous-image-gen"
-  
+
   # Image configuration
   image:
     repository: "gcr.io/<REQUIRED: your-gcp-project-id>/continuous-image-gen"
     tag: "latest"
     pullPolicy: "IfNotPresent"
-  
+
   # Service configuration
   service:
     type: ClusterIP
     port: 8080
     targetPort: 8080
-    
+
   # Ingress configuration (managed by Istio)
   ingress:
     enabled: true
@@ -45,7 +45,7 @@ continuousImageGen:
     tls:
       enabled: true
       secretName: "platform-tls"  # Managed by cert-manager
-  
+
   # GCS (Google Cloud Storage) Configuration
   storage:
     type: "gcs"  # Google Cloud Storage
@@ -65,14 +65,14 @@ continuousImageGen:
         create: true
         name: "continuous-image-gen-gcs"
         keySecretName: "gcs-service-account-key"
-    
+
     # Local cache configuration
     cache:
       enabled: true
       size: "50Gi"
       storageClass: "standard"  # GKE storage class
       mountPath: "/data/cache"
-  
+
   # Model storage configuration
   models:
     # Where to store/cache AI models
@@ -81,7 +81,7 @@ continuousImageGen:
       size: "100Gi"
       storageClass: "standard"
       mountPath: "/data/models"
-    
+
     # Hugging Face configuration
     huggingface:
       # Token stored in GCP Secret Manager
@@ -91,14 +91,14 @@ continuousImageGen:
         # Instructions: Create secret in GCP Secret Manager:
         # gcloud secrets create huggingface-token --data-file=-
         # Then grant access to the service account
-    
+
     # Model configurations
     flux:
       model: "black-forest-labs/FLUX.1-schnell"  # or FLUX.1-dev
       enableCuda: false  # GKE typically uses CPU or TPU
       enableTPU: true    # Enable TPU support if available
       precision: "fp16"
-  
+
   # Ollama integration (for prompt generation)
   ollama:
     enabled: true
@@ -106,7 +106,7 @@ continuousImageGen:
     model: "llama2"
     # If Ollama is not deployed, set to false and use this external endpoint:
     # externalEndpoint: "https://ollama-api.your-domain.com"
-  
+
   # Plugin configuration
   plugins:
     timeContext:
@@ -119,7 +119,7 @@ continuousImageGen:
     loraModels:
       enabled: false  # Requires specific model setup
       modelsPath: "/data/models/lora"
-  
+
   # Application configuration
   config:
     # Generation settings
@@ -128,14 +128,14 @@ continuousImageGen:
       defaultInterval: 300  # seconds
       maxBatchSize: 20
       maxConcurrent: 3
-      
+
     # Image settings
     image:
       width: 1024
       height: 1024
       guidanceScale: 7.5
       numInferenceSteps: 50
-      
+
     # Web UI settings
     webUI:
       enabled: true
@@ -145,7 +145,7 @@ continuousImageGen:
       authentication:
         enabled: true
         provider: "keycloak"  # Inherits from CSO platform
-  
+
   # Resource limits
   resources:
     requests:
@@ -154,7 +154,7 @@ continuousImageGen:
     limits:
       cpu: "4"
       memory: "16Gi"
-    
+
   # GPU/TPU resources (for GKE with accelerators)
   accelerators:
     # For GPU nodes
@@ -167,7 +167,7 @@ continuousImageGen:
       enabled: false
       type: "v3-8"
       topology: "2x2"
-  
+
   # Autoscaling
   autoscaling:
     enabled: true
@@ -175,7 +175,7 @@ continuousImageGen:
     maxReplicas: 5
     targetCPUUtilization: 70
     targetMemoryUtilization: 80
-  
+
   # Monitoring and observability
   monitoring:
     metrics:
@@ -189,7 +189,7 @@ continuousImageGen:
     logging:
       level: "INFO"
       format: "json"
-  
+
   # Database (for storing generation history and metadata)
   database:
     type: "cloudsql"  # Google Cloud SQL
@@ -208,14 +208,14 @@ continuousImageGen:
           requests:
             cpu: "100m"
             memory: "128Mi"
-  
+
   # Backup configuration
   backup:
     enabled: true
     schedule: "0 2 * * *"  # Daily at 2 AM
     destination: "gs://<REQUIRED: your-backup-bucket>/continuous-image-gen"
     retention: 30  # days
-  
+
   # Security settings
   security:
     podSecurityPolicy:
@@ -237,13 +237,13 @@ dependencies:
     enabled: true
     realm: "platform"
     clientId: "continuous-image-gen"
-    
+
   istio:
     enabled: true
     virtualService:
       enabled: true
       gateway: "platform-gateway"
-      
+
   certManager:
     enabled: true
     issuer: "letsencrypt-prod"
@@ -253,7 +253,7 @@ testing:
   e2e:
     enabled: false
     image: "gcr.io/<REQUIRED: your-gcp-project-id>/continuous-image-gen-tests"
-    
+
 # Rollout strategy
 rolloutStrategy:
   type: "RollingUpdate"

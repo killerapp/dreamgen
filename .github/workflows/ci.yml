@@ -33,7 +33,7 @@ jobs:
         uv run black --check src/ tests/
         uv run isort --check-only src/ tests/
 
-    - name: Run type checking  
+    - name: Run type checking
       run: |
         uv run mypy src/ --ignore-missing-imports
 
@@ -48,7 +48,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     needs: test
-    
+
     steps:
     - uses: actions/checkout@v4
 

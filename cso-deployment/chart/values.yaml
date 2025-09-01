@@ -8,7 +8,7 @@ global:
     namespace: continuous-image-gen
     environment: development
     domain: example.com
-  
+
   # Image pull secrets for private registries
   imagePullSecrets:
     - name: ghcr-secret
@@ -16,20 +16,20 @@ global:
 ## Backend Service Configuration
 backend:
   enabled: true
-  
+
   image:
     repository: ghcr.io/killerapp/continuous-image-gen-backend
     tag: "1.0.0"
     pullPolicy: IfNotPresent
-  
+
   replicaCount: 1
-  
+
   service:
     type: ClusterIP
     port: 8000
     targetPort: 8000
     annotations: {}
-  
+
   resources:
     requests:
       cpu: 1000m
@@ -37,7 +37,7 @@ backend:
     limits:
       cpu: 2000m
       memory: 8Gi
-  
+
   # Environment variables
   env:
     USE_MOCK_GENERATOR: "true"
@@ -47,14 +47,14 @@ backend:
     HF_HOME: "/app/models"
     TRANSFORMERS_CACHE: "/app/models"
     OUTPUT_DIR: "/app/output"
-  
+
   # Secrets (managed by External Secrets Operator)
   secrets:
     huggingfaceToken:
       enabled: false
       secretName: huggingface-token
       key: token
-  
+
   # Health checks
   livenessProbe:
     httpGet:
@@ -62,14 +62,14 @@ backend:
       port: 8000
     initialDelaySeconds: 30
     periodSeconds: 10
-  
+
   readinessProbe:
     httpGet:
       path: /api/status
       port: 8000
     initialDelaySeconds: 10
     periodSeconds: 5
-  
+
   # Auto-scaling
   autoscaling:
     enabled: false
@@ -81,20 +81,20 @@ backend:
 ## Frontend Service Configuration
 frontend:
   enabled: true
-  
+
   image:
     repository: ghcr.io/killerapp/continuous-image-gen-frontend
     tag: "1.0.0"
     pullPolicy: IfNotPresent
-  
+
   replicaCount: 2
-  
+
   service:
     type: ClusterIP
     port: 7860
     targetPort: 7860
     annotations: {}
-  
+
   resources:
     requests:
       cpu: 200m
@@ -102,18 +102,18 @@ frontend:
     limits:
       cpu: 500m
       memory: 1Gi
-  
+
   env:
     NODE_ENV: "production"
     NEXT_PUBLIC_API_URL: "http://continuous-image-gen-backend:8000"
-  
+
   livenessProbe:
     httpGet:
       path: /
       port: 7860
     initialDelaySeconds: 30
     periodSeconds: 10
-  
+
   readinessProbe:
     httpGet:
       path: /
@@ -151,7 +151,7 @@ storage:
     size: 100Gi
     existingClaim: ""
     mountPath: /app/models
-  
+
   output:
     enabled: true
     storageClass: standard
@@ -164,7 +164,7 @@ storage:
 database:
   enabled: true
   type: postgresql
-  
+
   # External database (if not using embedded)
   external:
     enabled: false
@@ -194,29 +194,29 @@ postgresql:
 auth:
   enabled: true
   provider: keycloak
-  
+
   oauth2Proxy:
     enabled: true
     image:
       repository: quay.io/oauth2-proxy/oauth2-proxy
       tag: "v7.5.0"
-    
+
     clientId: continuous-image-gen
     existingSecret: oauth2-proxy-secret
-    
+
     # Keycloak configuration
     providerUrl: https://keycloak.example.com/realms/cso
     redirectUrl: https://image-gen.example.com/oauth2/callback
-    
+
     # Cookie settings
     cookieSecret: ""  # Generated if empty
     cookieDomain: .example.com
     cookieSecure: true
-    
+
     # Allowed email domains
     emailDomains:
       - "*"
-    
+
     # Skip auth for these paths
     skipAuthRegex:
       - ^/api/health
@@ -225,24 +225,24 @@ auth:
 ## Service Mesh (Istio)
 serviceMesh:
   enabled: true
-  
+
   virtualService:
     enabled: true
     gateways:
       - istio-system/main-gateway
-    
+
     # Traffic management
     timeout: 300s
     retries:
       attempts: 3
       perTryTimeout: 30s
       retryOn: gateway-error,connect-failure,refused-stream
-  
+
   # mTLS configuration
   peerAuthentication:
     enabled: true
     mode: STRICT
-  
+
   # Authorization policies
   authorizationPolicy:
     enabled: true
@@ -257,7 +257,7 @@ serviceMesh:
 ## Monitoring & Observability
 monitoring:
   enabled: true
-  
+
   # Prometheus metrics
   metrics:
     enabled: true
@@ -267,12 +267,12 @@ monitoring:
       enabled: true
       interval: 30s
       scrapeTimeout: 10s
-  
+
   # Grafana dashboards
   dashboard:
     enabled: true
     configMapName: image-gen-dashboard
-  
+
   # Alerts
   alerts:
     enabled: true
@@ -283,7 +283,7 @@ monitoring:
       - name: HighMemoryUsage
         expr: container_memory_usage_bytes / container_spec_memory_limit_bytes > 0.9
         severity: critical
-  
+
   # OpenTelemetry tracing
   tracing:
     enabled: true
@@ -299,7 +299,7 @@ security:
     fsGroup: 1000
     seccompProfile:
       type: RuntimeDefault
-  
+
   containerSecurityContext:
     allowPrivilegeEscalation: false
     readOnlyRootFilesystem: false
@@ -308,13 +308,13 @@ security:
         - ALL
       add:
         - NET_BIND_SERVICE
-  
+
   networkPolicy:
     enabled: true
     policyTypes:
       - Ingress
       - Egress
-    
+
     # Ingress rules
     ingress:
       - from:
@@ -324,7 +324,7 @@ security:
           - podSelector:
               matchLabels:
                 app: istio-ingressgateway
-    
+
     # Egress rules
     egress:
       # DNS

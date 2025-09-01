@@ -21,9 +21,9 @@ export default {
 		headers.set('Cache-Control', 'public, max-age=86400'); // Cache for 1 day
 		headers.set('Access-Control-Allow-Origin', '*'); // Allow CORS
 
-		return new Response(object.body, { 
+		return new Response(object.body, {
 			headers,
-			status: 200 
+			status: 200
 		});
 	}
 }

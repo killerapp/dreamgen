@@ -12,9 +12,7 @@ def test_mock_image_generator(tmp_path: Path):
     prompt = "a test prompt"
     output_path = tmp_path / "test.png"
 
-    result_path, gen_time, model_name = asyncio.run(
-        generator.generate_image(prompt, output_path)
-    )
+    result_path, gen_time, model_name = asyncio.run(generator.generate_image(prompt, output_path))
 
     assert result_path.exists()
     assert model_name == "mock"

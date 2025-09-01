@@ -3,11 +3,13 @@
 This class emulates the interface of :class:`ImageGenerator` but does not
 require any ML models. It simply creates a placeholder image using PIL.
 """
+
 from __future__ import annotations
 
 import time
 from pathlib import Path
 from typing import Tuple
+
 from PIL import Image
 
 from ..utils.config import Config
@@ -25,7 +27,9 @@ class MockImageGenerator:
         # Nothing to initialize for the mock
         return None
 
-    async def generate_image(self, prompt: str, output_path: Path, force_reinit: bool = False) -> Tuple[Path, float, str]:
+    async def generate_image(
+        self, prompt: str, output_path: Path, force_reinit: bool = False
+    ) -> Tuple[Path, float, str]:
         """Generate a simple placeholder image.
 
         Args:
@@ -52,7 +56,7 @@ class MockImageGenerator:
 
     async def generate(self, prompt: str, seed: int = None) -> Image.Image:
         """Generate a simple placeholder image for API compatibility.
-        
+
         Args:
             prompt: Prompt text (unused but could be drawn on image).
             seed: Random seed (unused in mock).
@@ -61,12 +65,13 @@ class MockImageGenerator:
         """
         width = self.config.image.width
         height = self.config.image.height
-        
+
         # Create a simple colored image with the prompt text
         img = Image.new("RGB", (width, height), color=(64, 64, 64))
-        
+
         # Optional: Add text to show it's a mock image
         from PIL import ImageDraw, ImageFont
+
         draw = ImageDraw.Draw(img)
         try:
             # Try to use a default font
@@ -75,7 +80,7 @@ class MockImageGenerator:
             draw.text((10, 10), text, fill=(200, 200, 200), font=font)
         except:
             pass  # If font loading fails, just return the blank image
-        
+
         return img
 
     def cleanup(self) -> None:  # noqa: D401 - stub

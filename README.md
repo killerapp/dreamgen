@@ -9,7 +9,7 @@ Generate unlimited AI images locally with no subscriptions, no cloud APIs, and c
 Beautiful, VS Code-inspired dark theme with real-time generation and organized galleries. The web interface features:
 
 - **🎨 Smart Generation Dashboard** - AI-enhanced prompts with contextual plugins
-- **🖼️ Weekly Gallery Organization** - Browse your creations by week with thumbnail previews  
+- **🖼️ Weekly Gallery Organization** - Browse your creations by week with thumbnail previews
 - **⚙️ Plugin Management** - Configure time-aware and artistic enhancement plugins
 - **📊 Real-time Status** - Monitor API, GPU, and generation progress
 
@@ -36,7 +36,7 @@ npm run dev
 ## 🔑 Why Choose This?
 
 - **🏠 100% Local**: No cloud APIs, no usage limits, complete privacy
-- **🧠 Smart Prompts**: AI-enhanced prompts with time, holidays, and art styles  
+- **🧠 Smart Prompts**: AI-enhanced prompts with time, holidays, and art styles
 - **🌐 Modern UI**: Professional web interface with galleries and real-time updates
 - **💰 Zero Cost**: Generate unlimited images after initial setup
 - **🔌 Extensible**: Plugin system for custom prompt enhancements
@@ -47,7 +47,7 @@ npm run dev
 # Generate a single image
 dreamgen generate
 
-# Generate with interactive prompt refinement  
+# Generate with interactive prompt refinement
 dreamgen generate --interactive
 
 # Generate multiple images in a batch

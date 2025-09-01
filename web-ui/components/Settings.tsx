@@ -2,14 +2,14 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { 
-  Settings as SettingsIcon, 
-  Download, 
-  CheckCircle, 
-  AlertCircle, 
-  Loader2, 
-  Eye, 
-  EyeOff, 
+import {
+  Settings as SettingsIcon,
+  Download,
+  CheckCircle,
+  AlertCircle,
+  Loader2,
+  Eye,
+  EyeOff,
   Server,
   Database,
   Key,
@@ -48,7 +48,7 @@ export default function Settings({ systemStatus }: SettingsProps) {
       const handleWebSocketMessage = (data: unknown) => {
         if (typeof data === 'object' && data !== null && 'type' in data) {
           const msg = data as Record<string, unknown>;
-          
+
           if (msg.type === 'model_download_started') {
             setDownloadingModels(prev => new Set(prev).add(msg.model_id as string));
           } else if (msg.type === 'model_download_completed' || msg.type === 'model_download_error') {
@@ -61,7 +61,7 @@ export default function Settings({ systemStatus }: SettingsProps) {
           }
         }
       };
-      
+
       // Connect with our message handler
       api.connectWebSocket(handleWebSocketMessage);
     }
@@ -93,16 +93,16 @@ export default function Settings({ systemStatus }: SettingsProps) {
     try {
       await api.setHFToken(hfToken.trim());
       setMessage({ type: 'success', text: 'HuggingFace token saved successfully!' });
-      
+
       // Store in localStorage as well (like agenticinsights.com pattern)
       localStorage.setItem('hf_token', hfToken.trim());
-      
+
       setHFToken("");
       await loadHFTokenStatus();
     } catch (error) {
-      setMessage({ 
-        type: 'error', 
-        text: `Failed to save token: ${error instanceof Error ? error.message : 'Unknown error'}` 
+      setMessage({
+        type: 'error',
+        text: `Failed to save token: ${error instanceof Error ? error.message : 'Unknown error'}`
       });
     } finally {
       setIsSubmitting(false);
@@ -123,9 +123,9 @@ export default function Settings({ systemStatus }: SettingsProps) {
         newSet.delete(modelId);
         return newSet;
       });
-      setMessage({ 
-        type: 'error', 
-        text: `Failed to start download: ${error instanceof Error ? error.message : 'Unknown error'}` 
+      setMessage({
+        type: 'error',
+        text: `Failed to start download: ${error instanceof Error ? error.message : 'Unknown error'}`
       });
     }
 
@@ -153,11 +153,11 @@ export default function Settings({ systemStatus }: SettingsProps) {
 
   const getModelStatusIcon = (model: ModelInfo) => {
     const isDownloading = downloadingModels.has(model.id);
-    
+
     if (isDownloading) {
       return <Loader2 className="w-4 h-4 text-yellow-500 animate-spin" />;
     }
-    
+
     switch (model.status) {
       case 'ready': return <CheckCircle className="w-4 h-4 text-green-500" />;
       case 'downloading': return <Loader2 className="w-4 h-4 text-yellow-500 animate-spin" />;
@@ -251,7 +251,7 @@ export default function Settings({ systemStatus }: SettingsProps) {
                   {modelStatus?.models.map((model) => {
                     const isDownloading = downloadingModels.has(model.id);
                     const canDownload = model.status === 'not_downloaded' || model.status === 'partial';
-                    
+
                     return (
                       <div
                         key={model.id}
@@ -282,7 +282,7 @@ export default function Settings({ systemStatus }: SettingsProps) {
                               )}
                             </div>
                           </div>
-                          
+
                           <div className="flex items-center gap-2">
                             {canDownload && !isDownloading && (
                               <button
@@ -325,7 +325,7 @@ export default function Settings({ systemStatus }: SettingsProps) {
             >
               <div className="max-w-2xl">
                 <h3 className="text-xl font-semibold mb-6">Authentication</h3>
-                
+
                 {/* HF Token Section */}
                 <div className="space-y-6">
                   <div className="border border-border rounded-lg p-4">
@@ -339,13 +339,13 @@ export default function Settings({ systemStatus }: SettingsProps) {
                         </div>
                       )}
                     </div>
-                    
+
                     <p className="text-sm text-muted-foreground mb-4">
-                      Required for downloading private models and avoiding rate limits. 
+                      Required for downloading private models and avoiding rate limits.
                       Get your token from{" "}
-                      <a 
-                        href="https://huggingface.co/settings/tokens" 
-                        target="_blank" 
+                      <a
+                        href="https://huggingface.co/settings/tokens"
+                        target="_blank"
                         rel="noopener noreferrer"
                         className="text-primary hover:underline"
                       >
@@ -370,7 +370,7 @@ export default function Settings({ systemStatus }: SettingsProps) {
                           {showToken ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                         </button>
                       </div>
-                      
+
                       <button
                         type="submit"
                         disabled={!hfToken.trim() || isSubmitting}
@@ -403,7 +403,7 @@ export default function Settings({ systemStatus }: SettingsProps) {
             >
               <div className="max-w-2xl">
                 <h3 className="text-xl font-semibold mb-6">System Information</h3>
-                
+
                 {systemStatus && (
                   <div className="space-y-4">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -488,8 +488,8 @@ export default function Settings({ systemStatus }: SettingsProps) {
           >
             <div className={cn(
               "px-4 py-3 rounded-lg shadow-lg text-sm font-medium",
-              message.type === 'success' 
-                ? "bg-green-500 text-white" 
+              message.type === 'success'
+                ? "bg-green-500 text-white"
                 : "bg-red-500 text-white"
             )}>
               {message.text}

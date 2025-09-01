@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
-import { 
-  Trash2, Download, X, Loader2, Clock, FileText, ZoomIn, 
-  Calendar, Grid, ChevronDown, ChevronRight, Folder 
+import {
+  Trash2, Download, X, Loader2, Clock, FileText, ZoomIn,
+  Calendar, Grid, ChevronDown, ChevronRight, Folder
 } from "lucide-react";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
@@ -46,65 +46,65 @@ export default function Gallery() {
   const [deleting, setDeleting] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("week");
-  
+
   const imagesPerPage = viewMode === "all" ? 20 : 200; // Load reasonable amount for week view
 
   const loadImages = async () => {
     setLoading(true);
     setError(null);
-    
+
     try {
       // Create cache key based on view mode and page
       const cacheKey = `gallery_${viewMode}_${page}_${viewMode === "all" ? imagesPerPage : 200}`;
-      
+
       // Try to get from cache first
       const cachedData = await galleryCache.get<GalleryResponse>(cacheKey);
-      
+
       if (cachedData) {
         console.log('Loading gallery from cache');
         setImages(cachedData.images);
         setTotal(cachedData.total);
-        
+
         if (viewMode === "week") {
           organizeByWeek(cachedData.images);
         }
         setLoading(false);
         return;
       }
-      
+
       // If not in cache or expired, fetch from API
       console.log('Fetching gallery from API');
       const response: GalleryResponse = await api.getGallery(
         viewMode === "all" ? imagesPerPage : 200, // Load reasonable amount for week view
         viewMode === "all" ? page * imagesPerPage : 0
       );
-      
+
       // Save to cache
       await galleryCache.set(cacheKey, {
         images: response.images,
         total: response.total
       });
-      
+
       setImages(response.images);
       setTotal(response.total);
-      
+
       if (viewMode === "week") {
         organizeByWeek(response.images);
       }
     } catch (err) {
       setError("Failed to load gallery");
       console.error('Gallery load error:', err);
-      
+
       // Try to load from cache even if API fails
       try {
         const cacheKey = `gallery_${viewMode}_${page}_${viewMode === "all" ? imagesPerPage : 200}`;
         const cachedData = await galleryCache.get<GalleryResponse>(cacheKey);
-        
+
         if (cachedData) {
           console.log('API failed, using cached data');
           setImages(cachedData.images);
           setTotal(cachedData.total);
-          
+
           if (viewMode === "week") {
             organizeByWeek(cachedData.images);
           }
@@ -120,13 +120,13 @@ export default function Gallery() {
 
   const organizeByWeek = (images: GalleryImage[]) => {
     const groups = new Map<string, WeekGroup>();
-    
+
     images.forEach(image => {
       const date = new Date(image.created_at);
       const year = date.getFullYear();
       const weekNumber = getWeekNumber(date);
       const key = `${year}-${weekNumber}`;
-      
+
       if (!groups.has(key)) {
         const { start, end } = getWeekBounds(year, weekNumber);
         groups.set(key, {
@@ -137,18 +137,18 @@ export default function Gallery() {
           images: []
         });
       }
-      
+
       groups.get(key)!.images.push(image);
     });
-    
+
     // Sort groups by year and week (newest first)
     const sorted = Array.from(groups.values()).sort((a, b) => {
       if (a.year !== b.year) return b.year - a.year;
       return b.week - a.week;
     });
-    
+
     setWeekGroups(sorted);
-    
+
     // Auto-expand the most recent week
     if (sorted.length > 0) {
       const mostRecent = `${sorted[0].year}-${sorted[0].week}`;
@@ -168,13 +168,13 @@ export default function Gallery() {
     const jan1 = new Date(year, 0, 1);
     const daysToMonday = (jan1.getDay() === 0 ? 6 : jan1.getDay() - 1);
     const firstMonday = new Date(year, 0, 1 - daysToMonday);
-    
+
     const start = new Date(firstMonday);
     start.setDate(start.getDate() + (week - 1) * 7);
-    
+
     const end = new Date(start);
     end.setDate(end.getDate() + 6);
-    
+
     return { start, end };
   };
 
@@ -195,16 +195,16 @@ export default function Gallery() {
   const handleDelete = async (imagePath: string, event: React.MouseEvent) => {
     event.stopPropagation();
     if (!confirm("Are you sure you want to delete this image?")) return;
-    
+
     setDeleting(imagePath);
     try {
       const pathParts = imagePath.split("/images/");
       const relativePath = pathParts[1] || imagePath;
       await api.deleteImage(relativePath);
-      
+
       // Clear cache after deletion
       await galleryCache.clear();
-      
+
       await loadImages();
       if (selectedImage?.path === imagePath) {
         setSelectedImage(null);
@@ -266,7 +266,7 @@ export default function Gallery() {
             className="w-full h-full object-cover"
             loading="lazy"
           />
-          
+
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
             <div className="absolute bottom-0 left-0 right-0 p-3">
               <p className="text-xs text-white line-clamp-2 mb-2">{image.prompt}</p>
@@ -318,7 +318,7 @@ export default function Gallery() {
       <div className="h-full flex items-center justify-center">
         <div className="text-center">
           <p className="text-sm text-destructive mb-4">{error}</p>
-          <button 
+          <button
             onClick={loadImages}
             className="px-4 py-2 bg-primary text-primary-foreground rounded hover:opacity-90"
           >
@@ -358,8 +358,8 @@ export default function Gallery() {
                   onClick={() => setViewMode("week")}
                   className={cn(
                     "px-3 py-1 rounded text-sm transition-colors flex items-center gap-1.5",
-                    viewMode === "week" 
-                      ? "bg-background text-foreground shadow-sm" 
+                    viewMode === "week"
+                      ? "bg-background text-foreground shadow-sm"
                       : "text-muted-foreground hover:text-foreground"
                   )}
                 >
@@ -370,8 +370,8 @@ export default function Gallery() {
                   onClick={() => setViewMode("all")}
                   className={cn(
                     "px-3 py-1 rounded text-sm transition-colors flex items-center gap-1.5",
-                    viewMode === "all" 
-                      ? "bg-background text-foreground shadow-sm" 
+                    viewMode === "all"
+                      ? "bg-background text-foreground shadow-sm"
                       : "text-muted-foreground hover:text-foreground"
                   )}
                 >
@@ -379,7 +379,7 @@ export default function Gallery() {
                   <span className="hidden sm:inline">All</span>
                 </button>
               </div>
-              
+
               <button
                 onClick={async () => {
                   await galleryCache.clear(); // Clear cache on manual refresh
@@ -407,7 +407,7 @@ export default function Gallery() {
               {weekGroups.map((group) => {
                 const weekKey = `${group.year}-${group.week}`;
                 const isExpanded = expandedWeeks.has(weekKey);
-                
+
                 return (
                   <motion.div
                     key={weekKey}
@@ -437,7 +437,7 @@ export default function Gallery() {
                           </div>
                         </div>
                       </div>
-                      
+
                       {/* Preview thumbnails */}
                       <div className="flex -space-x-2">
                         {group.images.slice(0, 3).map((img, idx) => (
@@ -460,7 +460,7 @@ export default function Gallery() {
                         )}
                       </div>
                     </button>
-                    
+
                     {/* Week Content */}
                     <AnimatePresence>
                       {isExpanded && (
@@ -513,11 +513,11 @@ export default function Gallery() {
 
       {/* Modal for selected image */}
       {selectedImage && (
-        <div 
+        <div
           className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
           onClick={() => setSelectedImage(null)}
         >
-          <div 
+          <div
             className="relative max-w-6xl max-h-[90vh] bg-background rounded-lg overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >

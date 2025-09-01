@@ -9,11 +9,11 @@ global:
 ## Backend - Production Configuration
 backend:
   replicaCount: 2
-  
+
   image:
     tag: "1.0.0"  # Pin to specific version
     pullPolicy: Always
-  
+
   resources:
     requests:
       cpu: 2000m
@@ -21,13 +21,13 @@ backend:
     limits:
       cpu: 4000m
       memory: 16Gi
-  
+
   env:
     USE_MOCK_GENERATOR: "false"  # Use real models in production
     MOCK_MODE: "false"
     LOG_LEVEL: "WARNING"
     FLUX_MODEL: "black-forest-labs/FLUX.1-schnell"  # Commercial-friendly model
-  
+
   autoscaling:
     enabled: true
     minReplicas: 2
@@ -35,14 +35,14 @@ backend:
     targetCPUUtilizationPercentage: 60
     targetMemoryUtilizationPercentage: 70
 
-## Frontend - Production Configuration  
+## Frontend - Production Configuration
 frontend:
   replicaCount: 3
-  
+
   image:
     tag: "1.0.0"
     pullPolicy: Always
-  
+
   resources:
     requests:
       cpu: 500m
@@ -50,7 +50,7 @@ frontend:
     limits:
       cpu: 1000m
       memory: 2Gi
-  
+
   env:
     NODE_ENV: "production"
     NEXT_PUBLIC_API_URL: "https://image-gen.agenticinsights.com/api"
@@ -76,7 +76,7 @@ storage:
   models:
     storageClass: fast-ssd-retain
     size: 200Gi  # Larger for production models
-  
+
   output:
     storageClass: standard-retain
     size: 100Gi  # More space for generated images
@@ -100,7 +100,7 @@ auth:
     providerUrl: https://auth.agenticinsights.com/realms/production
     redirectUrl: https://image-gen.agenticinsights.com/oauth2/callback
     cookieDomain: .agenticinsights.com
-    
+
     # Restrict to organization emails
     emailDomains:
       - agenticinsights.com
@@ -110,7 +110,7 @@ monitoring:
   metrics:
     serviceMonitor:
       interval: 15s  # More frequent in production
-  
+
   alerts:
     enabled: true
     rules:
@@ -123,7 +123,7 @@ monitoring:
       - name: PodMemoryPressure
         expr: container_memory_usage_bytes / container_spec_memory_limit_bytes > 0.85
         severity: warning
-  
+
   tracing:
     samplingRate: 0.01  # Lower sampling in production
 
@@ -131,7 +131,7 @@ monitoring:
 security:
   networkPolicy:
     enabled: true
-    
+
     # Stricter egress rules in production
     egress:
       # DNS
@@ -166,7 +166,7 @@ backup:
 ## Production Node Selection
 nodeSelector:
   workload: gpu  # Schedule on GPU nodes if available
-  
+
 tolerations:
   - key: nvidia.com/gpu
     operator: Exists

@@ -31,7 +31,7 @@ class GalleryCache {
 
       request.onupgradeneeded = (event) => {
         const db = (event.target as IDBOpenDBRequest).result;
-        
+
         // Create object store if it doesn't exist
         if (!db.objectStoreNames.contains(this.storeName)) {
           const store = db.createObjectStore(this.storeName, { keyPath: 'key' });
@@ -43,7 +43,7 @@ class GalleryCache {
 
   async get<T = unknown>(key: string): Promise<T | null> {
     await this.init();
-    
+
     return new Promise((resolve) => {
       if (!this.db) {
         resolve(null);
@@ -56,7 +56,7 @@ class GalleryCache {
 
       request.onsuccess = () => {
         const result = request.result as CachedData<T> | undefined;
-        
+
         if (!result) {
           resolve(null);
           return;
@@ -92,7 +92,7 @@ class GalleryCache {
 
       const transaction = this.db.transaction([this.storeName], 'readwrite');
       const store = transaction.objectStore(this.storeName);
-      
+
       const cacheData: CachedData<T> = {
         key,
         data,

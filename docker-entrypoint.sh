@@ -11,12 +11,12 @@ if [ "$USE_MOCK_GENERATOR" = "true" ] || [ "$MOCK_MODE" = "true" ]; then
     echo "Running in MOCK mode (no GPU required)"
 else
     echo "Running in PRODUCTION mode with Flux models"
-    
+
     # Check for HF token if not in mock mode
     if [ -z "$HF_TOKEN" ]; then
         echo "Warning: HF_TOKEN not set. Model downloads may fail."
     fi
-    
+
     # Check if models are mounted
     if [ ! -d "/app/models" ] || [ -z "$(ls -A /app/models)" ]; then
         echo "Warning: Models directory is empty. Models will be downloaded on first use."

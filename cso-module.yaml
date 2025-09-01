@@ -25,14 +25,14 @@ spec:
       - flux
       - creative
       - automation
-  
+
   repository:
     url: https://github.com/killerapp/continuous-image-gen
     type: github
     branch: main
     path: /cso-deployment
     private: false
-  
+
   deployment:
     type: helm
     path: /cso-deployment/chart
@@ -47,7 +47,7 @@ spec:
       min: 1
       max: 3
       targetCPUUtilization: 70
-  
+
   testing:
     e2e:
       framework: playwright
@@ -72,7 +72,7 @@ spec:
       path: /tests
       command: uv run pytest tests/
       coverage: 90
-  
+
   requirements:
     authentication:
       enabled: true
@@ -82,7 +82,7 @@ spec:
         roles:
           - image-generator-user
           - image-generator-admin
-    
+
     database:
       type: postgresql
       tier: standard
@@ -90,13 +90,13 @@ spec:
       backup:
         enabled: true
         retention: 30d
-    
+
     storage:
       persistent: true
       size: 100Gi
       storageClass: fast-ssd
       accessMode: ReadWriteMany
-    
+
     monitoring:
       metrics:
         enabled: true
@@ -111,7 +111,7 @@ spec:
       tracing:
         enabled: true
         provider: opentelemetry
-    
+
     networking:
       ingress: true
       serviceMesh: istio
@@ -125,7 +125,7 @@ spec:
           ports:
             - protocol: TCP
               port: 11434
-    
+
     resources:
       requests:
         cpu: 2000m
@@ -133,7 +133,7 @@ spec:
       limits:
         cpu: 4000m
         memory: 16Gi
-  
+
   security:
     podSecurityContext:
       runAsNonRoot: true
@@ -141,19 +141,19 @@ spec:
       fsGroup: 1000
       seccompProfile:
         type: RuntimeDefault
-    
+
     containerSecurityContext:
       allowPrivilegeEscalation: false
       readOnlyRootFilesystem: false  # Need write for image generation
       capabilities:
         drop:
           - ALL
-    
+
     serviceAccount:
       create: true
       name: continuous-image-gen
       automountToken: false
-    
+
     secrets:
       provider: sealed-secrets
       externalSecrets:
@@ -163,10 +163,10 @@ spec:
         - name: s3-credentials
           backend: aws-secrets-manager
           path: /cso/continuous-image-gen/s3-creds
-    
+
     imagePullPolicy: IfNotPresent
     imageRegistry: ghcr.io/killerapp
-  
+
   compliance:
     frameworks: []
     dataClassification: internal
@@ -180,7 +180,7 @@ spec:
       tools:
         - trivy
         - snyk
-  
+
   dependencies:
     modules:
       - name: cso-module-auth
@@ -196,7 +196,7 @@ spec:
       - name: s3-storage
         type: service
         endpoint: https://s3.amazonaws.com
-  
+
   lifecycle:
     preInstall:
       - echo "Setting up image generation directories..."

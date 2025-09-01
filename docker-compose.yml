@@ -12,37 +12,37 @@ services:
       # Mount models from host to avoid re-downloading
       # Windows path for Hugging Face cache
       - ${USERPROFILE}/.cache/huggingface:/app/models:ro
-      
+
       # Mount output directory for generated images
       - ./output:/app/output
-      
+
       # Mount source code for development (hot reload)
       - ./src:/app/src:ro
       - ./data:/app/data:ro
-      
+
       # Mount logs
       - ./logs:/app/logs
     environment:
       # API Configuration
       - HOST=0.0.0.0
       - PORT=8000
-      
+
       # Model Configuration
       - USE_MOCK_GENERATOR=${USE_MOCK_GENERATOR:-true}
       - MOCK_MODE=${MOCK_MODE:-true}
       - HF_TOKEN=${HF_TOKEN:-}
       - HF_HOME=/app/models
       - TRANSFORMERS_CACHE=/app/models
-      
+
       # Flux Model Configuration
       - FLUX_MODEL=${FLUX_MODEL:-black-forest-labs/FLUX.1-schnell}
-      
+
       # Ollama Configuration (if available)
       - OLLAMA_HOST=${OLLAMA_HOST:-http://host.docker.internal:11434}
-      
+
       # Output Configuration
       - OUTPUT_DIR=/app/output
-      
+
       # Logging
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
     networks:

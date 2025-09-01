@@ -3,14 +3,17 @@ from datetime import datetime
 from pathlib import Path
 from typing import List, Optional, TypedDict
 
+
 class Holiday(TypedDict):
     month: int
     day: int
     name: str
     type: str
 
+
 class HolidayFact:
     """Plugin for getting information about today's holidays and observances."""
+
     _instance = None
     _holidays: List[Holiday] = []
 
@@ -25,7 +28,7 @@ class HolidayFact:
         """Load holidays from JSON file."""
         try:
             holidays_path = Path(__file__).parent.parent.parent / "data" / "holidays.json"
-            with open(holidays_path, 'r') as f:
+            with open(holidays_path, "r") as f:
                 self._holidays = json.load(f)
         except (FileNotFoundError, json.JSONDecodeError) as e:
             print(f"Error loading holidays: {str(e)}")
@@ -38,24 +41,26 @@ class HolidayFact:
 
         current_date = datetime.now()
         return [
-            holiday for holiday in self._holidays
+            holiday
+            for holiday in self._holidays
             if holiday["month"] == current_date.month and holiday["day"] == current_date.day
         ]
+
 
 def get_holiday_fact() -> Optional[str]:
     """
     Get an interesting fact about today's holidays or observances.
-    
+
     Returns:
         Optional[str]: A string mentioning today's special observances,
                       or None if there are no holidays today
     """
     plugin = HolidayFact()
     todays_holidays = plugin.get_todays_holidays()
-    
+
     if not todays_holidays:
         return None
-        
+
     if len(todays_holidays) == 1:
         holiday = todays_holidays[0]
         if holiday["type"] == "fun":

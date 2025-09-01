@@ -26,11 +26,11 @@ services:
       - ./data:/app/data
       - ./pyproject.toml:/app/pyproject.toml
       - ./uv.lock:/app/uv.lock
-      
+
       # Mount models from host
       - ${USERPROFILE}/.cache/huggingface:/app/models
       - ${USERPROFILE}/.cache/torch:/app/.cache/torch
-      
+
       # Mount output and logs
       - ./output:/app/output
       - ./logs:/app/logs
@@ -41,17 +41,17 @@ services:
       - RELOAD=true
       - DEBUG=true
       - LOG_LEVEL=DEBUG
-      
+
       # Use real models in development (if GPU available)
       - USE_MOCK_GENERATOR=${USE_MOCK_GENERATOR:-false}
       - MOCK_MODE=${MOCK_MODE:-false}
-      
+
       # HuggingFace token for model access
       - HF_TOKEN=${HF_TOKEN:-}
       - HF_HOME=/app/models
       - TRANSFORMERS_CACHE=/app/models
     command: ["/opt/venv/bin/python", "-m", "uvicorn", "src.api.server:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
-    
+
     networks:
       - imagegen-network
 
@@ -70,10 +70,10 @@ services:
       - NODE_ENV=development
       - NEXT_PUBLIC_API_URL=http://localhost:8000
     command: ["npm", "run", "dev"]
-    
+
     networks:
       - imagegen-network
-    
+
   # Development tools
   adminer:
     image: adminer:latest

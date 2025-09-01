@@ -40,7 +40,7 @@ metadata:
   name: continuous-image-gen
 spec:
   # Existing spec sections...
-  
+
   bootstrap:
     description: "Resources required before module deployment"
     cloud:
@@ -80,7 +80,7 @@ spec:
       azure:
         enabled: false
         # Azure-specific configuration
-    
+
     secrets:
       required:
         - name: huggingface-token
@@ -90,7 +90,7 @@ spec:
         - name: gcs-service-account
           type: generated
           description: "Auto-generated during bootstrap"
-      
+
     validation:
       preChecks:
         - type: api-enabled
@@ -181,7 +181,7 @@ spec:
       - type: object-storage
         purpose: model-cache
         size: 100Gi
-      - type: object-storage  
+      - type: object-storage
         purpose: output-data
         size: 500Gi
     compute:
@@ -265,7 +265,7 @@ cso module bootstrap estimate continuous-image-gen \
 - Basic CLI commands
 - GCP support only
 
-### Phase 2 (Q2 2025)  
+### Phase 2 (Q2 2025)
 - Interactive wizard
 - Multi-cloud support
 - Cost estimation

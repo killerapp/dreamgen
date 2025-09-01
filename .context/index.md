@@ -175,4 +175,3 @@ The prompt generator integrates plugins through these steps:
    - LLM receives enhanced system context
    - Generates prompt incorporating all plugin contexts
    - Maintains coherence while respecting token limits
-

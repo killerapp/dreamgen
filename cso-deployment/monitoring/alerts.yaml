@@ -6,7 +6,7 @@ groups:
       - alert: ImageGenerationHighErrorRate
         expr: |
           (
-            rate(image_generation_failures_total[5m]) / 
+            rate(image_generation_failures_total[5m]) /
             rate(image_generation_total[5m])
           ) > 0.1
         for: 5m
@@ -22,7 +22,7 @@ groups:
       # Slow Generation
       - alert: ImageGenerationSlow
         expr: |
-          histogram_quantile(0.95, 
+          histogram_quantile(0.95,
             rate(image_generation_duration_seconds_bucket[5m])
           ) > 60
         for: 10m
@@ -33,12 +33,12 @@ groups:
         annotations:
           summary: "Slow image generation detected"
           description: "95th percentile generation time is {{ $value }}s (threshold: 60s)"
-          
+
       # Pod Memory Pressure
       - alert: ImageGenHighMemoryUsage
         expr: |
           (
-            container_memory_usage_bytes{pod=~".*continuous-image-gen.*"} / 
+            container_memory_usage_bytes{pod=~".*continuous-image-gen.*"} /
             container_spec_memory_limit_bytes{pod=~".*continuous-image-gen.*"}
           ) > 0.9
         for: 5m
@@ -49,7 +49,7 @@ groups:
         annotations:
           summary: "High memory usage in {{ $labels.pod }}"
           description: "Pod {{ $labels.pod }} memory usage is {{ $value | humanizePercentage }}"
-          
+
       # Pod Restart Loop
       - alert: ImageGenPodRestartLoop
         expr: |
@@ -62,7 +62,7 @@ groups:
         annotations:
           summary: "Pod {{ $labels.pod }} is in restart loop"
           description: "Pod {{ $labels.pod }} has restarted {{ $value }} times in the last 15 minutes"
-          
+
       # Storage Nearly Full
       - alert: ImageGenStorageNearlyFull
         expr: |
@@ -78,7 +78,7 @@ groups:
         annotations:
           summary: "Storage volume {{ $labels.persistentvolumeclaim }} is nearly full"
           description: "PVC {{ $labels.persistentvolumeclaim }} is {{ $value | humanizePercentage }} full"
-          
+
       # Backend Unavailable
       - alert: ImageGenBackendDown
         expr: |
@@ -91,7 +91,7 @@ groups:
         annotations:
           summary: "Image generation backend is down"
           description: "Backend service has been unavailable for more than 2 minutes"
-          
+
       # Frontend Unavailable
       - alert: ImageGenFrontendDown
         expr: |
@@ -104,7 +104,7 @@ groups:
         annotations:
           summary: "Image generation frontend is down"
           description: "Frontend service has been unavailable for more than 2 minutes"
-          
+
       # High CPU Usage
       - alert: ImageGenHighCPU
         expr: |
@@ -119,7 +119,7 @@ groups:
         annotations:
           summary: "High CPU usage in {{ $labels.pod }}"
           description: "Pod {{ $labels.pod }} CPU usage is {{ $value }}%"
-          
+
       # No Images Generated Recently
       - alert: ImageGenNoRecentActivity
         expr: |
@@ -132,7 +132,7 @@ groups:
         annotations:
           summary: "No images generated recently"
           description: "No images have been generated in the last 2 hours"
-          
+
       # Ollama Connection Failed
       - alert: ImageGenOllamaUnavailable
         expr: |

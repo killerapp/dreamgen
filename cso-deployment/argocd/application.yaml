@@ -14,7 +14,7 @@ metadata:
     - resources-finalizer.argocd.argoproj.io
 spec:
   project: cso-modules
-  
+
   source:
     repoURL: https://github.com/killerapp/continuous-image-gen
     targetRevision: main
@@ -30,11 +30,11 @@ spec:
           value: "{{ .Values.global.cso.environment }}"
         - name: global.cso.domain
           value: "{{ .Values.global.cso.domain }}"
-  
+
   destination:
     server: https://kubernetes.default.svc
     namespace: continuous-image-gen
-  
+
   syncPolicy:
     automated:
       prune: true
@@ -51,13 +51,13 @@ spec:
         duration: 5s
         factor: 2
         maxDuration: 3m
-  
+
   revisionHistoryLimit: 3
-  
+
   # Health assessment for custom resources
   health:
     progressDeadlineSeconds: 600
-  
+
   # Ignore differences for dynamic fields
   ignoreDifferences:
     - group: apps
@@ -85,17 +85,17 @@ metadata:
     cso.platform/project: "true"
 spec:
   description: CloudStack Orchestrator Modules Project
-  
+
   sourceRepos:
     - 'https://github.com/killerapp/*'
     - 'https://charts.bitnami.com/bitnami'
-  
+
   destinations:
     - namespace: 'continuous-image-gen'
       server: https://kubernetes.default.svc
     - namespace: 'cso-*'
       server: https://kubernetes.default.svc
-  
+
   clusterResourceWhitelist:
     - group: ''
       kind: Namespace
@@ -103,18 +103,18 @@ spec:
       kind: ClusterRole
     - group: 'rbac.authorization.k8s.io'
       kind: ClusterRoleBinding
-  
+
   namespaceResourceWhitelist:
     - group: '*'
       kind: '*'
-  
+
   roles:
     - name: admin
       policies:
         - p, proj:cso-modules:admin, applications, *, cso-modules/*, allow
       groups:
         - cso-admins
-    
+
     - name: developer
       policies:
         - p, proj:cso-modules:developer, applications, get, cso-modules/*, allow

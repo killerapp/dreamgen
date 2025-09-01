@@ -6,7 +6,7 @@ Fix the Typer-based CLI to restore critical template installation functionality 
 ## Current State Analysis
 The migration from Click to Typer has resulted in:
 - Template installation broken - init command uses smart setup but doesn't install cookiecutter templates (agents/commands)
-- Commands consolidated correctly - `quick-start` and `bootstrap` functionality merged into `init` 
+- Commands consolidated correctly - `quick-start` and `bootstrap` functionality merged into `init`
 - Semantic search added as experimental feature (working correctly)
 - Find command restructured with subcommands (working correctly)
 - Template resources not accessible in installed packages despite correct wheel packaging
@@ -69,12 +69,12 @@ def init(
     # ... keep existing parameters ...
 ):
     """Initialize mem8 workspace with intelligent defaults and guided setup."""
-    
+
     # After line 821 (after detecting project context):
     # Auto-detect if templates should be installed
     should_install_templates = False
     template_type = template  # Use explicit template if provided
-    
+
     if template:
         # User explicitly requested templates
         should_install_templates = True
@@ -82,7 +82,7 @@ def init(
         # Auto-detect Claude Code projects need templates
         should_install_templates = True
         template_type = "claude-config"  # Default for Claude projects
-    
+
     # After line 862 (after setup_minimal_structure):
     if should_install_templates:
         console.print("📦 [cyan]Installing templates...[/cyan]")
@@ -94,43 +94,43 @@ def _install_templates(template_type: str, force: bool, verbose: bool) -> None:
     from cookiecutter.main import cookiecutter
     from importlib import resources
     import mem8.templates
-    
+
     # Resolve template paths
     try:
         template_base = resources.files(mem8.templates)
     except (ImportError, AttributeError):
         # Development fallback
         template_base = Path(__file__).parent.parent
-    
+
     # Map template types to directories
     template_map = {
         "full": ["claude-dot-md-template", "shared-thoughts-template"],
         "claude-config": ["claude-dot-md-template"],
         "thoughts-repo": ["shared-thoughts-template"],
     }
-    
+
     if template_type not in template_map:
         console.print(f"[red]Invalid template: {template_type}[/red]")
         return
-    
+
     workspace_dir = Path.cwd()
-    
+
     # Run cookiecutter for each template
     for template_name in template_map[template_type]:
         template_path = template_base / template_name
-        
+
         # Check if target already exists
         target_dir = ".claude" if "claude" in template_name else "thoughts"
         if (workspace_dir / target_dir).exists() and not force:
             console.print(f"[yellow]Skipping {template_name} - {target_dir} already exists[/yellow]")
             continue
-        
+
         try:
             # For Claude templates, ensure .claude directory is the output
             extra_context = {}
             if "claude" in template_name:
                 extra_context = {"project_slug": ".claude"}
-            
+
             cookiecutter(
                 str(template_path),
                 no_input=True,
@@ -152,13 +152,13 @@ def _install_templates(template_type: str, force: bool, verbose: bool) -> None:
 def _check_conflicts(workspace_dir: Path, templates: List[str]) -> List[str]:
     """Check for existing files that would be overwritten."""
     conflicts = []
-    
+
     for template in templates:
         if "claude" in template and (workspace_dir / ".claude").exists():
             conflicts.append(".claude directory")
         if "thoughts" in template and (workspace_dir / "thoughts").exists():
             conflicts.append("thoughts directory")
-    
+
     return conflicts
 
 def _backup_shared_thoughts(workspace_dir: Path) -> Optional[Path]:
@@ -167,12 +167,12 @@ def _backup_shared_thoughts(workspace_dir: Path) -> Optional[Path]:
     if shared_dir.exists() and any(shared_dir.iterdir()):
         backup_dir = workspace_dir / ".mem8_backup" / "thoughts_shared"
         backup_dir.parent.mkdir(parents=True, exist_ok=True)
-        
+
         import shutil
         shutil.copytree(shared_dir, backup_dir, dirs_exist_ok=True)
         console.print(f"[yellow]Backed up thoughts/shared to {backup_dir}[/yellow]")
         return backup_dir
-    
+
     return None
 
 def _restore_shared_thoughts(workspace_dir: Path, backup_dir: Path) -> None:
@@ -230,19 +230,19 @@ def verify_templates() -> bool:
     try:
         from importlib import resources
         import mem8.templates
-        
+
         template_base = resources.files(mem8.templates)
-        
+
         # Check for both templates
         claude_template = template_base / "claude-dot-md-template"
         thoughts_template = template_base / "shared-thoughts-template"
-        
+
         # Try to list files in templates
         claude_exists = (claude_template / "cookiecutter.json").exists()
         thoughts_exists = (thoughts_template / "cookiecutter.json").exists()
-        
+
         return claude_exists and thoughts_exists
-        
+
     except Exception:
         return False
 
@@ -251,18 +251,18 @@ def get_template_path(template_name: str) -> Path:
     try:
         from importlib import resources
         import mem8.templates
-        
+
         template_path = resources.files(mem8.templates) / template_name
         if template_path.exists():
             return template_path
     except Exception:
         pass
-    
+
     # Development fallback
     dev_path = Path(__file__).parent.parent.parent / template_name
     if dev_path.exists():
         return dev_path
-    
+
     raise FileNotFoundError(f"Template not found: {template_name}")
 ```
 

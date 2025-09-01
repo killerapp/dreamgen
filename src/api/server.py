@@ -12,14 +12,13 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import aiofiles
-from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect, UploadFile, File
+from fastapi import FastAPI, File, HTTPException, UploadFile, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-
-from src.generators.prompt_generator import PromptGenerator
 from src.generators.image_generator import ImageGenerator
+from src.generators.prompt_generator import PromptGenerator
 from src.utils.config import Config
 from src.utils.plugin_manager import PluginManager
 from src.utils.storage import save_image_and_prompt
@@ -85,19 +84,24 @@ class GenerateResponse(BaseModel):
     metadata: Dict[str, Any] = Field(default_factory=dict, description="Generation metadata")
     created_at: str = Field(..., description="ISO timestamp")
 
+
 class EditRequest(BaseModel):
     """Request model for image editing"""
+
     prompt: str = Field(..., description="Edit prompt describing desired changes")
     strength: float = Field(0.8, ge=0.0, le=1.0, description="Edit strength (0.0 to 1.0)")
-    
+
+
 class EditResponse(BaseModel):
     """Response model for image editing"""
+
     id: str = Field(..., description="Unique edit ID")
     prompt: str = Field(..., description="Edit prompt used")
     original_path: str = Field(..., description="Path to original image")
     edited_path: str = Field(..., description="Path to edited image")
     metadata: Dict[str, Any] = Field(default_factory=dict, description="Edit metadata")
     created_at: str = Field(..., description="ISO timestamp")
+
 
 class PluginInfo(BaseModel):
     """Plugin information model"""
@@ -213,25 +217,29 @@ async def get_model_status():
     """Get status of available models and their download progress"""
     import os
     from pathlib import Path
-    
-    hf_cache_dir = Path(os.getenv('HF_HUB_CACHE', os.path.expanduser('~/.cache/huggingface/hub')))
-    
+
+    hf_cache_dir = Path(os.getenv("HF_HUB_CACHE", os.path.expanduser("~/.cache/huggingface/hub")))
+
     models = []
     model_configs = [
         {"id": "Qwen/Qwen-Image", "name": "Qwen-Image", "type": "text-to-image"},
         {"id": "Qwen/Qwen-Image-Edit", "name": "Qwen-Image-Edit", "type": "image-to-image"},
-        {"id": "black-forest-labs/FLUX.1-schnell", "name": "FLUX.1 Schnell", "type": "text-to-image"},
+        {
+            "id": "black-forest-labs/FLUX.1-schnell",
+            "name": "FLUX.1 Schnell",
+            "type": "text-to-image",
+        },
         {"id": "black-forest-labs/FLUX.1-dev", "name": "FLUX.1 Dev", "type": "text-to-image"},
     ]
-    
+
     for model_config in model_configs:
         model_id = model_config["id"]
         model_path = hf_cache_dir / f"models--{model_id.replace('/', '--')}"
-        
+
         status = "not_downloaded"
         size = 0
         incomplete_files = 0
-        
+
         if model_path.exists():
             # Check for incomplete files
             blobs_path = model_path / "blobs"
@@ -246,24 +254,26 @@ async def get_model_status():
                         status = "ready"
                     else:
                         status = "partial"
-                
+
                 # Calculate total size
                 try:
                     total_size = sum(f.stat().st_size for f in blobs_path.iterdir() if f.is_file())
                     size = total_size
                 except:
                     size = 0
-        
-        models.append({
-            "id": model_id,
-            "name": model_config["name"],
-            "type": model_config["type"],
-            "status": status,
-            "size": size,
-            "incomplete_files": incomplete_files,
-            "path": str(model_path) if model_path.exists() else None
-        })
-    
+
+        models.append(
+            {
+                "id": model_id,
+                "name": model_config["name"],
+                "type": model_config["type"],
+                "status": status,
+                "size": size,
+                "incomplete_files": incomplete_files,
+                "path": str(model_path) if model_path.exists() else None,
+            }
+        )
+
     return {"models": models, "cache_dir": str(hf_cache_dir)}
 
 
@@ -272,57 +282,64 @@ async def download_model(model_id: str):
     """Start downloading a model"""
     # URL decode the model_id
     from urllib.parse import unquote
+
     model_id = unquote(model_id)
-    
+
     try:
         # Import huggingface_hub for downloading
-        from huggingface_hub import hf_hub_download, snapshot_download
         import asyncio
-        
+
+        from huggingface_hub import hf_hub_download, snapshot_download
+
         # Start download in background
         async def download_in_background():
             try:
                 logger.info(f"Starting download for model: {model_id}")
                 await manager.broadcast(
-                    json.dumps({
-                        "type": "model_download_started",
-                        "model_id": model_id,
-                        "timestamp": datetime.now().isoformat()
-                    })
+                    json.dumps(
+                        {
+                            "type": "model_download_started",
+                            "model_id": model_id,
+                            "timestamp": datetime.now().isoformat(),
+                        }
+                    )
                 )
-                
+
                 # Use snapshot_download to get the entire model
                 loop = asyncio.get_event_loop()
                 await loop.run_in_executor(
-                    None,
-                    lambda: snapshot_download(repo_id=model_id, resume_download=True)
+                    None, lambda: snapshot_download(repo_id=model_id, resume_download=True)
                 )
-                
+
                 logger.info(f"Download completed for model: {model_id}")
                 await manager.broadcast(
-                    json.dumps({
-                        "type": "model_download_completed",
-                        "model_id": model_id,
-                        "timestamp": datetime.now().isoformat()
-                    })
+                    json.dumps(
+                        {
+                            "type": "model_download_completed",
+                            "model_id": model_id,
+                            "timestamp": datetime.now().isoformat(),
+                        }
+                    )
                 )
-                
+
             except Exception as e:
                 logger.error(f"Model download failed: {str(e)}")
                 await manager.broadcast(
-                    json.dumps({
-                        "type": "model_download_error",
-                        "model_id": model_id,
-                        "error": str(e),
-                        "timestamp": datetime.now().isoformat()
-                    })
+                    json.dumps(
+                        {
+                            "type": "model_download_error",
+                            "model_id": model_id,
+                            "error": str(e),
+                            "timestamp": datetime.now().isoformat(),
+                        }
+                    )
                 )
-        
+
         # Start the download task
         asyncio.create_task(download_in_background())
-        
+
         return {"message": f"Download started for {model_id}", "model_id": model_id}
-        
+
     except Exception as e:
         logger.error(f"Failed to start download: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -332,28 +349,28 @@ async def download_model(model_id: str):
 async def set_hf_token(token_data: dict):
     """Set HuggingFace token"""
     token = token_data.get("token", "").strip()
-    
+
     if not token:
         raise HTTPException(status_code=400, detail="Token is required")
-    
+
     try:
         # Save token to HF cache directory
         import os
         from pathlib import Path
-        
-        hf_cache_dir = Path(os.getenv('HF_HOME', os.path.expanduser('~/.cache/huggingface')))
+
+        hf_cache_dir = Path(os.getenv("HF_HOME", os.path.expanduser("~/.cache/huggingface")))
         hf_cache_dir.mkdir(parents=True, exist_ok=True)
         token_file = hf_cache_dir / "token"
-        
-        with open(token_file, 'w') as f:
+
+        with open(token_file, "w") as f:
             f.write(token)
-        
+
         # Also set environment variable for current session
-        os.environ['HF_TOKEN'] = token
-        
+        os.environ["HF_TOKEN"] = token
+
         logger.info("HuggingFace token updated successfully")
         return {"message": "HuggingFace token updated successfully"}
-        
+
     except Exception as e:
         logger.error(f"Failed to set HF token: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -364,18 +381,18 @@ async def get_hf_token_status():
     """Check if HF token is configured"""
     import os
     from pathlib import Path
-    
+
     # Check environment variable first
-    if os.getenv('HF_TOKEN'):
+    if os.getenv("HF_TOKEN"):
         return {"configured": True, "source": "environment"}
-    
+
     # Check token file
-    hf_cache_dir = Path(os.getenv('HF_HOME', os.path.expanduser('~/.cache/huggingface')))
+    hf_cache_dir = Path(os.getenv("HF_HOME", os.path.expanduser("~/.cache/huggingface")))
     token_file = hf_cache_dir / "token"
-    
+
     if token_file.exists():
         return {"configured": True, "source": "file"}
-    
+
     return {"configured": False, "source": None}
 
 
@@ -442,21 +459,19 @@ async def generate_image(request: GenerateRequest):
         try:
             image_gen = ImageGenerator(config)
         except MemoryError as e:
-            error_msg = "Insufficient memory to load Flux model. This model requires significant RAM/VRAM."
+            error_msg = (
+                "Insufficient memory to load Flux model. This model requires significant RAM/VRAM."
+            )
             logger.error(f"Memory error loading Flux model: {str(e)}")
             await manager.broadcast(
-                json.dumps(
-                    {"type": "generation_error", "id": generation_id, "error": error_msg}
-                )
+                json.dumps({"type": "generation_error", "id": generation_id, "error": error_msg})
             )
             raise HTTPException(status_code=507, detail=error_msg)
         except Exception as e:
             error_msg = f"Failed to load Flux model: {str(e)}"
             logger.error(error_msg)
             await manager.broadcast(
-                json.dumps(
-                    {"type": "generation_error", "id": generation_id, "error": error_msg}
-                )
+                json.dumps({"type": "generation_error", "id": generation_id, "error": error_msg})
             )
             raise HTTPException(status_code=500, detail=error_msg)
 
@@ -615,61 +630,62 @@ async def batch_generate(count: int = 5, delay: int = 0):
 async def edit_image(request: EditRequest, file: UploadFile = File(...)):
     """Edit an uploaded image using Qwen-Image-Edit"""
     edit_id = str(uuid.uuid4())
-    
+
     try:
         # Broadcast start event
-        await manager.broadcast(json.dumps({
-            "type": "edit_started",
-            "id": edit_id,
-            "timestamp": datetime.now().isoformat()
-        }))
-        
+        await manager.broadcast(
+            json.dumps(
+                {"type": "edit_started", "id": edit_id, "timestamp": datetime.now().isoformat()}
+            )
+        )
+
         # Read uploaded file
         image_bytes = await file.read()
-        
+
         # Initialize image editor
         from src.generators.image_editor import ImageEditor
+
         editor = ImageEditor(config)
-        
+
         # Broadcast editing event
-        await manager.broadcast(json.dumps({
-            "type": "editing_image",
-            "id": edit_id,
-            "prompt": request.prompt
-        }))
-        
-        # Edit the image
-        edited_image = await editor.edit_image(
-            image_bytes,
-            request.prompt,
-            request.strength
+        await manager.broadcast(
+            json.dumps({"type": "editing_image", "id": edit_id, "prompt": request.prompt})
         )
-        
+
+        # Edit the image
+        edited_image = await editor.edit_image(image_bytes, request.prompt, request.strength)
+
         # Save both original and edited images
-        from src.utils.storage import save_image_and_prompt
-        
+        import io
+
         # Save original
         from PIL import Image
-        import io
+
+        from src.utils.storage import save_image_and_prompt
+
         original_img = Image.open(io.BytesIO(image_bytes))
         original_path = save_image_and_prompt(original_img, f"ORIGINAL: {request.prompt}")
-        
+
         # Save edited
         edited_path = save_image_and_prompt(edited_image, f"EDITED: {request.prompt}")
-        
+
         # Create relative paths for API response
         original_relative = f"/images/{original_path.relative_to(OUTPUT_DIR).as_posix()}"
         edited_relative = f"/images/{edited_path.relative_to(OUTPUT_DIR).as_posix()}"
-        
+
         # Broadcast completion event
-        await manager.broadcast(json.dumps({
-            "type": "edit_completed",
-            "id": edit_id,
-            "original_path": original_relative,
-            "edited_path": edited_relative,
-            "prompt": request.prompt
-        }))
-        
+        await manager.broadcast(
+            json.dumps(
+                {
+                    "type": "edit_completed",
+                    "id": edit_id,
+                    "original_path": original_relative,
+                    "edited_path": edited_relative,
+                    "prompt": request.prompt,
+                }
+            )
+        )
+
         return EditResponse(
             id=edit_id,
             prompt=request.prompt,
@@ -678,21 +694,17 @@ async def edit_image(request: EditRequest, file: UploadFile = File(...)):
             metadata={
                 "model": "Qwen/Qwen-Image-Edit",
                 "strength": request.strength,
-                "original_filename": file.filename
+                "original_filename": file.filename,
             },
-            created_at=datetime.now().isoformat()
+            created_at=datetime.now().isoformat(),
         )
-        
+
     except Exception as e:
         logger.error(f"Image edit failed: {str(e)}")
-        
+
         # Broadcast error event
-        await manager.broadcast(json.dumps({
-            "type": "edit_error",
-            "id": edit_id,
-            "error": str(e)
-        }))
-        
+        await manager.broadcast(json.dumps({"type": "edit_error", "id": edit_id, "error": str(e)}))
+
         raise HTTPException(status_code=500, detail=str(e))
 
 

@@ -115,14 +115,14 @@ export class ImageGenAPI {
   async getGallery(limit: number = 50, offset: number = 0) {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
-    
+
     try {
       const response = await fetch(
         `${this.baseUrl}/api/gallery?limit=${limit}&offset=${offset}`,
         { signal: controller.signal }
       );
       clearTimeout(timeoutId);
-      
+
       if (!response.ok) throw new Error('Failed to get gallery');
       return response.json();
     } catch (error) {
@@ -144,10 +144,10 @@ export class ImageGenAPI {
 
   connectWebSocket(onMessage: (data: unknown) => void): void {
     const wsUrl = this.baseUrl.replace('http://', 'ws://').replace('https://', 'wss://');
-    
+
     try {
       this.ws = new WebSocket(`${wsUrl}/ws`);
-      
+
       this.ws.onopen = () => {
         console.log('WebSocket connected');
       };

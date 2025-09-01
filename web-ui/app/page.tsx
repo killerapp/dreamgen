@@ -21,7 +21,7 @@ export default function Home() {
   const [generationStatus, setGenerationStatus] = useState<string>("");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showLogs, setShowLogs] = useState(true);
-  
+
   // Image editing state
   const [editMode, setEditMode] = useState<"generate" | "edit">("generate");
   const [editPrompt, setEditPrompt] = useState("");
@@ -89,7 +89,7 @@ export default function Home() {
       setCurrentImage(response);
       addLog(`Success! Image saved as: ${response.image_path}`);
       setGenerationStatus("");
-      
+
       // Clear gallery cache when new image is generated
       await galleryCache.clear();
     } catch (error) {
@@ -134,13 +134,13 @@ export default function Home() {
             >
               {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
-            
-            <Image 
-              src="/logo_mark.png" 
-              alt="Agentic Insights" 
-              width={20} 
-              height={20} 
-              className="shrink-0" 
+
+            <Image
+              src="/logo_mark.png"
+              alt="Agentic Insights"
+              width={20}
+              height={20}
+              className="shrink-0"
             />
             <span className="font-semibold text-sm text-foreground hidden sm:inline">
               Continuous Image Generator
@@ -149,10 +149,10 @@ export default function Home() {
               CIG
             </span>
           </div>
-          
-          <a 
-            href="https://agenticinsights.com" 
-            target="_blank" 
+
+          <a
+            href="https://agenticinsights.com"
+            target="_blank"
             rel="noopener noreferrer"
             className="text-xs hover:text-primary transition-colors flex items-center gap-1.5"
           >
@@ -220,17 +220,17 @@ export default function Home() {
                       <X className="w-4 h-4" />
                     </button>
                   </div>
-                  
+
                   <h2 className="text-sm font-semibold mb-4 text-primary hidden lg:block">
                     Generation Controls
                   </h2>
-                  
+
                   <div className="space-y-4">
                     <div>
                       <label className="text-xs text-muted-foreground">
                         Prompt (optional)
                       </label>
-                      <textarea 
+                      <textarea
                         className="w-full mt-1 p-2 bg-background border border-input rounded-md text-sm font-mono resize-none focus:outline-none focus:ring-2 focus:ring-primary/50"
                         rows={4}
                         placeholder="Leave empty for AI-generated prompt..."
@@ -241,7 +241,7 @@ export default function Home() {
                     </div>
 
                     <motion.button
-                      data-testid="generate-image-button" 
+                      data-testid="generate-image-button"
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
                       className="w-full py-2.5 bg-primary text-primary-foreground rounded-md hover:opacity-90 transition-opacity font-medium text-sm disabled:opacity-50"
@@ -264,12 +264,12 @@ export default function Home() {
                       </h3>
                       <div className="space-y-1">
                         {plugins.map((plugin) => (
-                          <label 
-                            key={plugin.name} 
+                          <label
+                            key={plugin.name}
                             className="flex items-center gap-2 text-xs cursor-pointer hover:text-foreground transition-colors"
                           >
-                            <input 
-                              type="checkbox" 
+                            <input
+                              type="checkbox"
                               checked={plugin.enabled}
                               onChange={() => handlePluginToggle(plugin.name)}
                               className="rounded accent-primary"
@@ -285,7 +285,7 @@ export default function Home() {
 
               {/* Mobile overlay backdrop */}
               {sidebarOpen && (
-                <div 
+                <div
                   className="fixed inset-0 bg-black/50 z-20 lg:hidden"
                   onClick={() => setSidebarOpen(false)}
                 />
@@ -298,7 +298,7 @@ export default function Home() {
                   "border-b border-border bg-background transition-all",
                   showLogs ? "h-32 sm:h-40 lg:h-1/3" : "h-10"
                 )}>
-                  <div 
+                  <div
                     className="flex items-center justify-between px-3 py-2 cursor-pointer hover:bg-muted/50"
                     onClick={() => setShowLogs(!showLogs)}
                   >
@@ -313,13 +313,13 @@ export default function Home() {
                       ▼
                     </motion.div>
                   </div>
-                  
+
                   {showLogs && (
                     <div className="px-3 pb-3 overflow-y-auto h-[calc(100%-2.5rem)]">
                       <div className="font-mono text-xs space-y-1">
                         {logs.map((log, i) => (
-                          <div 
-                            key={i} 
+                          <div
+                            key={i}
                             className={cn(
                               "break-all",
                               log.includes('[ERROR]') ? 'text-destructive' : 'text-primary'
@@ -336,7 +336,7 @@ export default function Home() {
                 {/* Image Display - Responsive */}
                 <div className="flex-1 flex items-center justify-center p-4 sm:p-6 lg:p-8">
                   {isGenerating ? (
-                    <motion.div 
+                    <motion.div
                       initial={{ opacity: 0, scale: 0.9 }}
                       animate={{ opacity: 1, scale: 1 }}
                       className="text-center"
@@ -346,13 +346,13 @@ export default function Home() {
                         {generationStatus || "Generating image..."}
                       </p>
                       <p className="text-xs text-muted-foreground mt-2">
-                        {generationStatus.includes("Loading") 
-                          ? "First time model loading can take several minutes" 
+                        {generationStatus.includes("Loading")
+                          ? "First time model loading can take several minutes"
                           : "This may take a moment"}
                       </p>
                       <div className="mt-4 max-w-xs sm:max-w-md mx-auto">
                         <div className="h-1 bg-muted rounded-full overflow-hidden">
-                          <motion.div 
+                          <motion.div
                             className="h-full bg-primary"
                             animate={{ x: ["-100%", "100%"] }}
                             transition={{ repeat: Infinity, duration: 1.5, ease: "linear" }}
@@ -362,12 +362,12 @@ export default function Home() {
                       </div>
                     </motion.div>
                   ) : currentImage ? (
-                    <motion.div 
+                    <motion.div
                       initial={{ opacity: 0, scale: 0.9 }}
                       animate={{ opacity: 1, scale: 1 }}
                       className="max-w-full max-h-full"
                     >
-                      <img 
+                      <img
                         src={`http://localhost:8000${currentImage.image_path}`}
                         alt="Generated image"
                         className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
