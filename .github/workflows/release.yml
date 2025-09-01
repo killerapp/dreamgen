@@ -17,7 +17,7 @@ jobs:
     concurrency: release
     environment:
       name: pypi
-      url: https://pypi.org/project/continuous-image-gen/
+      url: https://pypi.org/project/dreamgen/
 
     steps:
       - uses: actions/checkout@v4
