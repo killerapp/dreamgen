@@ -42,7 +42,7 @@ from .logging_config import setup_logging
 # Initialize rich console for better output
 console = Console()
 app = typer.Typer(
-    help="Continuous Image Generation CLI",
+    help="DreamGen - Your AI Image Generation Companion",
     no_args_is_help=True,
     rich_markup_mode="rich",
 )
