@@ -124,6 +124,7 @@ dev-dependencies = [
     "python-semantic-release>=9.0.0",
     "build>=1.0.0",
     "twine>=4.0.0",
+    "pre-commit>=4.3.0",
 ]
 
 [tool.uv.sources]
@@ -140,4 +141,3 @@ url = "https://pypi.org/simple"
 name = "pytorch-cu124"
 url = "https://download.pytorch.org/whl/cu124"
 explicit = true
-
